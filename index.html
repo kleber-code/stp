@@ -1,333 +1,452 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cartaz Varejo (Destaque Principal) A4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Define a fonte Inter (negrito máximo) */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
-        
+      /* Define a fonte Inter (negrito máximo) */
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap");
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Oculta o template fora da impressão */
+      #printArea {
+        display: none;
+      }
+
+      /* Estilo para a label flutuante (opcional, mas melhora a visualização com placeholder) */
+      .input-group label {
+        transition: all 0.2s ease-in-out;
+        pointer-events: none;
+      }
+
+      @media print {
+        @page {
+          size: A4;
+          margin: 0;
+        }
+
+        html,
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f0f0; 
-            margin: 0; 
-            padding: 0;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100%;
+          height: 100%;
         }
 
-        /* Oculta o template fora da impressão */
+        #controlPanel {
+          display: none !important;
+        }
+
+        /* Exibe o template apenas na impressão */
         #printArea {
-            display: none; 
+          display: flex !important;
+          width: 210mm;
+          height: 297mm;
+          padding: 0 !important;
+          margin: 0 !important;
+          background-color: #ffffff !important;
+          overflow: hidden;
+
+          flex-direction: column;
+          justify-content: space-between;
+          align-items: center;
+
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
 
-        /* Estilo para a label flutuante (opcional, mas melhora a visualização com placeholder) */
-        .input-group label {
-            transition: all 0.2s ease-in-out;
-            pointer-events: none;
+        /* Classes de espaçamento para imprimir apenas o necessário */
+        .print-spacing-sm {
+          padding: 15px 15px;
         }
 
-        @media print {
-            @page {
-                size: A4; 
-                margin: 0; 
-            }
-            
-            html, body {
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100%; 
-                height: 100%;
-            }
-            
-            #controlPanel { display: none !important; }
-            
-            /* Exibe o template apenas na impressão */
-            #printArea {
-                display: flex !important; 
-                width: 210mm;
-                height: 297mm;
-                padding: 0 !important; 
-                margin: 0 !important;
-                background-color: #ffffff !important; 
-                overflow: hidden; 
-                
-                flex-direction: column;
-                justify-content: space-between; 
-                align-items: center;
-
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            /* Classes de espaçamento para imprimir apenas o necessário */
-            .print-spacing-sm { padding: 15px 15px; } 
-
-            /* Ajustes de fonte para preencher o A4 */
-            #outputTitulo { font-size: 5em !important; padding: 15px 0 !important; }
-            #outputProduto { font-size: 2.2em !important; margin-bottom: 0.5em !important; }
-            
-            /* DESTAQUE DO PREÇO DE */
-            #outputDe { font-size: 2.8em !important; } 
-            #outputDe span { font-size: 1.1em !important; } 
-            
-            /* NOVOS ESTILOS PARA O PREÇO POR (Separa R$ e ,00) */
-            .price-container { display: flex; align-items: flex-start; }
-            .print-text-major { font-size: 10.5em !important; line-height: 0.9 !important; } 
-            .print-text-minor { font-size: 3em !important; line-height: 1 !important; margin-top: 15px; } 
-            
-            #outputCondicao { font-size: 1.7em !important; padding: 10px 0 !important; }
-            
-            /* Estilo para o Código do Produto */
-            #outputCodigo {
-                font-size: 1.2em !important;
-                color: #555 !important;
-                margin-top: 10px !important;
-                text-align: right !important;
-                width: 100%;
-                padding-right: 15px;
-            }
+        /* Ajustes de fonte para preencher o A4 */
+        #outputTitulo {
+          font-size: 5em !important;
+          padding: 15px 0 !important;
         }
+        #outputProduto {
+          font-size: 2.2em !important;
+          margin-bottom: 0.5em !important;
+        }
+
+        /* DESTAQUE DO PREÇO DE */
+        #outputDe {
+          font-size: 2.8em !important;
+        }
+        #outputDe span {
+          font-size: 1.1em !important;
+        }
+
+        /* NOVOS ESTILOS PARA O PREÇO POR (Separa R$ e ,00) */
+        .price-container {
+          display: flex;
+          align-items: flex-start;
+        }
+        .print-text-major {
+          font-size: 10.5em !important;
+          line-height: 0.9 !important;
+        }
+        .print-text-minor {
+          font-size: 3em !important;
+          line-height: 1 !important;
+          margin-top: 15px;
+        }
+
+        #outputCondicao {
+          font-size: 1.7em !important;
+          padding: 10px 0 !important;
+        }
+
+        /* Estilo para o Código do Produto */
+        #outputCodigo {
+          font-size: 1.2em !important;
+          color: #555 !important;
+          margin-top: 10px !important;
+          text-align: right !important;
+          width: 100%;
+          padding-right: 15px;
+        }
+      }
     </style>
-</head>
-<body class="p-0 m-0">
+  </head>
+  <body class="p-0 m-0">
+    <div
+      class="w-full max-w-4xl bg-white shadow-lg overflow-hidden md:my-8 md:mx-auto"
+    >
+      <div id="controlPanel" class="p-6 border-b border-gray-200">
+        <h1 class="text-3xl font-extrabold text-black mb-6">
+          🛠️ Cartaz de Varejo
+        </h1>
 
-    <div class="w-full max-w-4xl bg-white shadow-lg overflow-hidden md:my-8 md:mx-auto">
-        
-        <div id="controlPanel" class="p-6 border-b border-gray-200">
-            <h1 class="text-3xl font-extrabold text-black mb-6">🛠️ Cartaz de Varejo</h1>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                <div class="input-group">
-                    <label for="inputCodigo" class="block text-sm font-medium text-gray-700 mb-1">Cód. Produto</label>
-                    <input id="inputCodigo" type="text" value="" placeholder="Ex: 987654" class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600">
-                </div>
-                
-                <div class="input-group md:col-span-2">
-                    <label for="inputTitulo" class="block text-sm font-medium text-gray-700 mb-1">Título da Oferta</label>
-                    <input id="inputTitulo" type="text" value="" placeholder="Ex: PROMOÇÃO RELÂMPAGO!" class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600">
-                </div>
-                
-                <div class="input-group md:col-span-3">
-                    <label for="inputProduto" class="block text-sm font-medium text-gray-700 mb-1">Nome do Produto</label>
-                    <input id="inputProduto" type="text" value="" placeholder="Ex: COLCHÃO QUEEN SIZE EXCLUSIVE" class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600">
-                </div>
-                
-                <div class="input-group">
-                    <label for="inputDe" class="block text-sm font-medium text-gray-700 mb-1">Preço DE (R$)</label>
-                    <input id="inputDe" type="text" value="" placeholder="Ex: 1999,99" class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600">
-                </div>
-                
-                <div class="input-group">
-                    <label for="inputPor" class="block text-sm font-medium text-gray-700 mb-1">Preço POR (R$)</label>
-                    <input id="inputPor" type="text" value="" placeholder="Ex: 1499,00" class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600">
-                </div>
-                
-                <div class="input-group">
-                    <label for="inputCondicao" class="block text-sm font-medium text-gray-700 mb-1">Condição de Pagamento</label>
-                    <input id="inputCondicao" type="text" value="" placeholder="Ex: Ou 6x de R$ 249,83 sem juros." class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600">
-                </div>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="input-group">
+            <label
+              for="inputCodigo"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Cód. Produto</label
+            >
+            <input
+              id="inputCodigo"
+              type="text"
+              value=""
+              placeholder="Ex: 987654"
+              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
+            />
+          </div>
 
-            <div class="mt-6">
-                <button onclick="imprimirPropaganda()" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out flex items-center justify-center text-lg">
-                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2h-1a2 2 0 00-2-2H9a2 2 0 00-2 2H6a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h4m-4 0v-4m4 4v-4m-4-8h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                    IMPRIMIR CARTAZ A4
-                </button>
-            </div>
+          <div class="input-group md:col-span-2">
+            <label
+              for="inputTitulo"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Título da Oferta</label
+            >
+            <input
+              id="inputTitulo"
+              type="text"
+              value=""
+              placeholder="Ex: PROMOÇÃO RELÂMPAGO!"
+              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
+            />
+          </div>
+
+          <div class="input-group md:col-span-3">
+            <label
+              for="inputProduto"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Nome do Produto</label
+            >
+            <input
+              id="inputProduto"
+              type="text"
+              value=""
+              placeholder="Ex: COLCHÃO QUEEN SIZE EXCLUSIVE"
+              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
+            />
+          </div>
+
+          <div class="input-group">
+            <label
+              for="inputDe"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Preço DE (R$)</label
+            >
+            <input
+              id="inputDe"
+              type="text"
+              value=""
+              placeholder="Ex: 1999,99"
+              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
+            />
+          </div>
+
+          <div class="input-group">
+            <label
+              for="inputPor"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Preço POR (R$)</label
+            >
+            <input
+              id="inputPor"
+              type="text"
+              value=""
+              placeholder="Ex: 1499,00"
+              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
+            />
+          </div>
+
+          <div class="input-group">
+            <label
+              for="inputCondicao"
+              class="block text-sm font-medium text-gray-700 mb-1"
+              >Condição de Pagamento</label
+            >
+            <input
+              id="inputCondicao"
+              type="text"
+              value=""
+              placeholder="Ex: Ou 6x de R$ 249,83 sem juros."
+              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
+            />
+          </div>
         </div>
 
-        <div id="printArea" class="bg-white">
-            
-            <div id="outputTitulo" class="w-full bg-black text-white text-center font-black uppercase text-5xl md:text-8xl leading-none print-spacing-sm">
-                
-            </div>
-            
-            <div class="text-center w-full flex-grow flex flex-col items-center justify-start pt-10 pb-8">
-                
-                <h3 id="outputProduto" class="font-black text-black print-spacing-sm mb-4">
-                    
-                </h3>
-
-                <div class="flex flex-col items-center justify-center my-6">
-                    
-                    <p id="outputDe" class="font-black text-black relative inline-block mb-4" style="display: none;">
-                        <span class="font-bold text-4xl mr-2">DE:</span> 
-                        <span class="text-4xl line-through"></span>
-                        <span class="absolute left-0 right-0 top-1/2 h-[7px] bg-black transform -translate-y-1/2"></span>
-                    </p>
-
-                    <div class="bg-red-600 text-white p-4 sm:p-6 shadow-2xl inline-block transform rotate-2 border-8 border-red-800 transition duration-300">
-                        <p class="text-4xl font-black leading-tight">
-                            POR
-                        </p>
-                        <div id="outputPor" class="flex justify-center items-start font-black leading-none mt-2 price-container">
-                            
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="w-full print-spacing-sm mt-8">
-                    <p id="outputCondicao" class="font-black text-2xl text-black text-center w-full px-5 py-3 border-t-4 border-b-4 border-black">
-                        
-                    </p>
-                </div>
-                
-                <p id="outputCodigo" class="text-sm text-gray-500 mt-auto w-full text-right pr-5 pt-3">
-                    
-                </p>
-
-            </div>
+        <div class="mt-6">
+          <button
+            onclick="imprimirPropaganda()"
+            class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out flex items-center justify-center text-lg"
+          >
+            <svg
+              class="w-6 h-6 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2h-1a2 2 0 00-2-2H9a2 2 0 00-2 2H6a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h4m-4 0v-4m4 4v-4m-4-8h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              ></path>
+            </svg>
+            IMPRIMIR CARTAZ A4
+          </button>
         </div>
+      </div>
+
+      <div id="printArea" class="bg-white">
+        <div
+          id="outputTitulo"
+          class="w-full bg-black text-white text-center font-black uppercase text-5xl md:text-8xl leading-none print-spacing-sm"
+        ></div>
+
+        <div
+          class="text-center w-full flex-grow flex flex-col items-center justify-start pt-10 pb-8"
+        >
+          <h3
+            id="outputProduto"
+            class="font-black text-black print-spacing-sm mb-4"
+          ></h3>
+
+          <div class="flex flex-col items-center justify-center my-6">
+            <p
+              id="outputDe"
+              class="font-black text-black relative inline-block mb-4"
+              style="display: none"
+            >
+              <span class="font-bold text-4xl mr-2">DE:</span>
+              <span class="text-4xl line-through"></span>
+              <span
+                class="absolute left-0 right-0 top-1/2 h-[7px] bg-black transform -translate-y-1/2"
+              ></span>
+            </p>
+
+            <div
+              class="bg-red-600 text-white p-4 sm:p-6 shadow-2xl inline-block transform rotate-2 border-8 border-red-800 transition duration-300"
+            >
+              <p class="text-4xl font-black leading-tight">POR</p>
+              <div
+                id="outputPor"
+                class="flex justify-center items-start font-black leading-none mt-2 price-container"
+              ></div>
+            </div>
+          </div>
+
+          <div class="w-full print-spacing-sm mt-8">
+            <p
+              id="outputCondicao"
+              class="font-black text-2xl text-black text-center w-full px-5 py-3 border-t-4 border-b-4 border-black"
+            ></p>
+          </div>
+
+          <p
+            id="outputCodigo"
+            class="text-sm text-gray-500 mt-auto w-full text-right pr-5 pt-3"
+          ></p>
+        </div>
+      </div>
     </div>
 
     <script>
-        // Mapeamento dos elementos de entrada e saída
-        const elements = {
-            inputCodigo: document.getElementById('inputCodigo'), 
-            inputTitulo: document.getElementById('inputTitulo'),
-            inputProduto: document.getElementById('inputProduto'),
-            inputDe: document.getElementById('inputDe'),
-            inputPor: document.getElementById('inputPor'),
-            inputCondicao: document.getElementById('inputCondicao'),
+      // Mapeamento dos elementos de entrada e saída
+      const elements = {
+        inputCodigo: document.getElementById("inputCodigo"),
+        inputTitulo: document.getElementById("inputTitulo"),
+        inputProduto: document.getElementById("inputProduto"),
+        inputDe: document.getElementById("inputDe"),
+        inputPor: document.getElementById("inputPor"),
+        inputCondicao: document.getElementById("inputCondicao"),
 
-            outputCodigo: document.getElementById('outputCodigo'),
-            outputTitulo: document.getElementById('outputTitulo'),
-            outputProduto: document.getElementById('outputProduto'),
-            outputDe: document.getElementById('outputDe'),
-            outputDePriceSpan: document.getElementById('outputDe').querySelector('.line-through'), 
-            outputPor: document.getElementById('outputPor'),
-            outputCondicao: document.getElementById('outputCondicao')
-        };
+        outputCodigo: document.getElementById("outputCodigo"),
+        outputTitulo: document.getElementById("outputTitulo"),
+        outputProduto: document.getElementById("outputProduto"),
+        outputDe: document.getElementById("outputDe"),
+        outputDePriceSpan: document
+          .getElementById("outputDe")
+          .querySelector(".line-through"),
+        outputPor: document.getElementById("outputPor"),
+        outputCondicao: document.getElementById("outputCondicao"),
+      };
 
-        /**
-         * 1. MODIFICAÇÃO: Formata e mascara o input de preço no formato X,XX
-         */
-        function handlePriceInput(event) {
-            let input = event.target;
-            let value = input.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+      /**
+       * 1. MODIFICAÇÃO: Formata e mascara o input de preço no formato X,XX
+       */
+      function handlePriceInput(event) {
+        let input = event.target;
+        let value = input.value.replace(/\D/g, ""); // Remove tudo que não é dígito
 
-            // Se o valor estiver vazio, não faz nada
-            if (!value) {
-                input.value = '';
-                updateOutput(); // Atualiza a saída para refletir o campo vazio
-                return;
-            }
-            
-            // Converte para centavos e depois para float para formatação
-            let numericValue = parseInt(value) / 100;
-            
-            // Formata no padrão brasileiro (1.234,56)
-            input.value = numericValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            
-            updateOutput();
+        // Se o valor estiver vazio, não faz nada
+        if (!value) {
+          input.value = "";
+          updateOutput(); // Atualiza a saída para refletir o campo vazio
+          return;
         }
 
-        /**
-         * Formata o valor principal (POR) para o display gigante.
-         * Recebe o valor já formatado do input (ex: "1.499,00").
-         */
-        function formatPricePor(formattedValue) {
-            // Remove o R$ e centavos para obter a parte inteira formatada
-            const parts = formattedValue.split(',');
-            const integerPart = parts[0];
-            const decimalPart = parts.length > 1 ? parts[1] : '00';
-            
-            // Se não houver parte inteira válida, retorna vazio
-            if (!integerPart.replace(/\D/g, '')) return '';
+        // Converte para centavos e depois para float para formatação
+        let numericValue = parseInt(value) / 100;
 
-            // Retorna a string HTML com os tamanhos diferenciados
-            return `
+        // Formata no padrão brasileiro (1.234,56)
+        input.value = numericValue.toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+
+        updateOutput();
+      }
+
+      /**
+       * Formata o valor principal (POR) para o display gigante.
+       * Recebe o valor já formatado do input (ex: "1.499,00").
+       */
+      function formatPricePor(formattedValue) {
+        // Remove o R$ e centavos para obter a parte inteira formatada
+        const parts = formattedValue.split(",");
+        const integerPart = parts[0];
+        const decimalPart = parts.length > 1 ? parts[1] : "00";
+
+        // Se não houver parte inteira válida, retorna vazio
+        if (!integerPart.replace(/\D/g, "")) return "";
+
+        // Retorna a string HTML com os tamanhos diferenciados
+        return `
                 <span class="text-4xl print-text-minor">R$</span>
                 <span class="text-9xl print-text-major">${integerPart}</span>
                 <span class="text-4xl print-text-minor align-top">,${decimalPart}</span>
             `;
-        }
-        
-        /**
-         * Formata o preço DE (padrão completo)
-         * Recebe o valor já formatado do input (ex: "1.976,00").
-         */
-        function formatPriceDe(formattedValue) {
-             // Apenas retorna o valor com o R$ na frente, já que está formatado corretamente
-            return `R$ ${formattedValue}`;
-        }
+      }
 
+      /**
+       * Formata o preço DE (padrão completo)
+       * Recebe o valor já formatado do input (ex: "1.976,00").
+       */
+      function formatPriceDe(formattedValue) {
+        // Apenas retorna o valor com o R$ na frente, já que está formatado corretamente
+        return `R$ ${formattedValue}`;
+      }
 
-        /**
-         * Atualiza todos os elementos de saída com os valores atuais dos inputs.
-         */
-        function updateOutput() {
-            const codigoValue = elements.inputCodigo.value.trim();
-            const tituloValue = elements.inputTitulo.value.trim();
-            const produtoValue = elements.inputProduto.value.trim();
-            const condicaoValue = elements.inputCondicao.value.trim();
-            
-            // Campos de Preço (já formatados via handlePriceInput)
-            const deValueFormatted = elements.inputDe.value.trim();
-            const porValueFormatted = elements.inputPor.value.trim();
+      /**
+       * Atualiza todos os elementos de saída com os valores atuais dos inputs.
+       */
+      function updateOutput() {
+        const codigoValue = elements.inputCodigo.value.trim();
+        const tituloValue = elements.inputTitulo.value.trim();
+        const produtoValue = elements.inputProduto.value.trim();
+        const condicaoValue = elements.inputCondicao.value.trim();
 
-            // Atualiza as saídas de texto
-            elements.outputCodigo.textContent = codigoValue ? `Cód.: ${codigoValue}` : '';
-            elements.outputTitulo.textContent = tituloValue.toUpperCase();
-            elements.outputProduto.textContent = produtoValue;
-            elements.outputCondicao.textContent = condicaoValue;
-            
-            // ----------------------------------------------------
-            // ATUALIZAÇÃO DO PREÇO POR
-            // ----------------------------------------------------
-            if (porValueFormatted) {
-                elements.outputPor.innerHTML = formatPricePor(porValueFormatted);
-            } else {
-                elements.outputPor.innerHTML = ''; // Limpa se estiver vazio
-            }
+        // Campos de Preço (já formatados via handlePriceInput)
+        const deValueFormatted = elements.inputDe.value.trim();
+        const porValueFormatted = elements.inputPor.value.trim();
 
-            // ----------------------------------------------------
-            // ATUALIZAÇÃO DO PREÇO DE
-            // ----------------------------------------------------
-            if (deValueFormatted) {
-                elements.outputDe.style.display = 'inline-block';
-                elements.outputDePriceSpan.textContent = formatPriceDe(deValueFormatted);
-            } else {
-                elements.outputDe.style.display = 'none'; // Oculta se estiver vazio
-            }
+        // Atualiza as saídas de texto
+        elements.outputCodigo.textContent = codigoValue
+          ? `Cód.: ${codigoValue}`
+          : "";
+        elements.outputTitulo.textContent = tituloValue.toUpperCase();
+        elements.outputProduto.textContent = produtoValue;
+        elements.outputCondicao.textContent = condicaoValue;
+
+        // ----------------------------------------------------
+        // ATUALIZAÇÃO DO PREÇO POR
+        // ----------------------------------------------------
+        if (porValueFormatted) {
+          elements.outputPor.innerHTML = formatPricePor(porValueFormatted);
+        } else {
+          elements.outputPor.innerHTML = ""; // Limpa se estiver vazio
         }
 
-        /**
-         * Aciona o diálogo de impressão do navegador.
-         */
-        function imprimirPropaganda() {
-            // Exibe a área de impressão temporariamente para a visualização
-            document.getElementById('printArea').style.display = 'flex';
-            
-            setTimeout(() => {
-                window.print();
-                
-                // Oculta a área novamente após a impressão (ou cancelamento)
-                setTimeout(() => {
-                    document.getElementById('printArea').style.display = 'none';
-                }, 100); 
-
-            }, 100); 
+        // ----------------------------------------------------
+        // ATUALIZAÇÃO DO PREÇO DE
+        // ----------------------------------------------------
+        if (deValueFormatted) {
+          elements.outputDe.style.display = "inline-block";
+          elements.outputDePriceSpan.textContent =
+            formatPriceDe(deValueFormatted);
+        } else {
+          elements.outputDe.style.display = "none"; // Oculta se estiver vazio
         }
+      }
 
-        // Inicialização e Listeners
-        window.onload = function() {
-            // Adiciona listeners para os inputs de preço
-            elements.inputDe.addEventListener('input', handlePriceInput);
-            elements.inputPor.addEventListener('input', handlePriceInput);
-            
-            // Adiciona listener para os demais inputs (texto)
-            elements.inputCodigo.addEventListener('input', updateOutput);
-            elements.inputTitulo.addEventListener('input', updateOutput);
-            elements.inputProduto.addEventListener('input', updateOutput);
-            elements.inputCondicao.addEventListener('input', updateOutput);
-            
-            // Inicializa a saída com campos vazios
-            updateOutput();
-        };
+      /**
+       * Aciona o diálogo de impressão do navegador.
+       */
+      function imprimirPropaganda() {
+        // Exibe a área de impressão temporariamente para a visualização
+        document.getElementById("printArea").style.display = "flex";
+
+        setTimeout(() => {
+          window.print();
+
+          // Oculta a área novamente após a impressão (ou cancelamento)
+          setTimeout(() => {
+            document.getElementById("printArea").style.display = "none";
+          }, 100);
+        }, 100);
+      }
+
+      // Inicialização e Listeners
+      window.onload = function () {
+        // Adiciona listeners para os inputs de preço
+        elements.inputDe.addEventListener("input", handlePriceInput);
+        elements.inputPor.addEventListener("input", handlePriceInput);
+
+        // Adiciona listener para os demais inputs (texto)
+        elements.inputCodigo.addEventListener("input", updateOutput);
+        elements.inputTitulo.addEventListener("input", updateOutput);
+        elements.inputProduto.addEventListener("input", updateOutput);
+        elements.inputCondicao.addEventListener("input", updateOutput);
+
+        // Inicializa a saída com campos vazios
+        updateOutput();
+      };
     </script>
-
-</body>
+  </body>
 </html>
