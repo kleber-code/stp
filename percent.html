@@ -9,7 +9,6 @@
     <style>
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #f3f4f6;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -17,7 +16,7 @@
         min-height: 100vh;
         margin: 0;
       }
-
+      
       /* Configuração exata para A4 Paisagem */
       .a4-landscape {
         width: 297mm;
@@ -29,7 +28,7 @@
         display: flex;
         flex-direction: column;
       }
-
+      
       /* Configurações de Impressão */
       @media print {
         @page {
@@ -51,7 +50,7 @@
           display: none !important;
         }
       }
-
+      
       /* Estilo para o Banner */
       .promo-banner {
         flex-grow: 1;
@@ -64,29 +63,31 @@
         box-sizing: border-box;
       }
       .promo-text {
-        font-size: 3.5em; /* Ajuste conforme necessário para caber */
+        font-size: 7vw; /* Ajuste conforme necessário para caber */
         font-weight: 900;
         color: #1a202c; /* Cinza escuro para contraste */
         line-height: 1.1;
         text-transform: uppercase;
+        word-break: break-word; /* Ensure long words break */
       }
       .discount-section {
-        margin-top: 15px;
+        margin-top: 1.5vw;
         display: flex;
         align-items: baseline;
-        gap: 10px;
+        gap: 1vw;
         color: #e53e3e; /* Vermelho vibrante */
       }
       .discount-value {
-        font-size: 7em;
+        font-size: 15vw;
         font-weight: 900;
         line-height: 1;
       }
       .discount-suffix {
-        font-size: 2.5em;
+        font-size: 5vw;
         font-weight: 700;
         line-height: 1.2;
         text-transform: uppercase;
+        word-break: break-word; /* Ensure long words break */
       }
     </style>
   </head>
@@ -132,17 +133,17 @@
 
     <script>
       function updateBanner() {
-        const mainText = document.getElementById('mainPromoText').value;
-        const discountVal = document.getElementById('discountValue').value;
-        const discountSuff = document.getElementById('discountSuffix').value;
-
-        document.getElementById('outMainPromoText').textContent = mainText || 'PROMOÇÃO IMPERDÍVEL';
-        document.getElementById('outDiscountValue').textContent = discountVal || '0';
-        document.getElementById('outDiscountSuffix').textContent = discountSuff || 'DE DESCONTO';
+        const mainText = document.getElementById('mainPromoText').value
+        const discountVal = document.getElementById('discountValue').value
+        const discountSuff = document.getElementById('discountSuffix').value
+      
+        document.getElementById('outMainPromoText').textContent = mainText || 'PROMOÇÃO IMPERDÍVEL'
+        document.getElementById('outDiscountValue').textContent = discountVal || '0'
+        document.getElementById('outDiscountSuffix').textContent = discountSuff || 'DE DESCONTO'
       }
-
+      
       // Initialize on load
-      updateBanner();
+      updateBanner()
     </script>
   </body>
 </html>
