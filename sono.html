@@ -326,7 +326,7 @@
         // Outputs
         document.getElementById(`out_titulo${idNum}`).textContent = titulo || 'OFERTA'
         document.getElementById(`out_prod${idNum}`).textContent = prod || 'NOME DO PRODUTO'
-        document.getElementById(`out_cod${idNum}`).textContent = codigo ? `Cód: ${codigo}` : ''
+        document.getElementById(`out_cod${idNum}`).textContent = codigo ? `${codigo}` : ''
       
         // Lógica Preço DE
         const boxDe = document.getElementById(`box_de${idNum}`)
