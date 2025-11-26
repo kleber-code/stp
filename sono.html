@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WELOVEPROCON</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+      
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f3f4f6;
+      }
+      
+      /* Painel de Controle */
+      #controlPanel {
+        transition: all 0.3s;
+      }
+      
+      /* Área de Impressão (Escondida na tela normal) */
+      #printArea {
+        display: none;
+      }
+      
+      /* --- CSS DE IMPRESSÃO --- */
+      @media print {
+        @page {
+          size: A4;
+          margin: 0;
+        }
+      
+        body,
+        html {
+          margin: 0;
+          padding: 0;
+          width: 210mm;
+          height: 297mm;
+          background-color: white;
+        }
+      
+        #controlPanel {
+          display: none !important;
+        }
+      
+        #printArea {
+          display: flex !important;
+          flex-direction: column;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+        }
+      
+        /* Cada metade da folha */
+        .poster-half {
+          width: 100%;
+          height: 50%; /* 50% exato da folha */
+          border-bottom: 1px dashed #999; /* Linha de corte */
+          display: flex;
+          flex-direction: column;
+          padding: 8mm;
+          box-sizing: border-box;
+          position: relative;
+        }
+      
+        .poster-half:last-child {
+          border-bottom: none;
+        }
+      
+        /* Cabeçalho (Título da Oferta) */
+        .print-header {
+          background-color: #000;
+          color: #fff;
+          text-transform: uppercase;
+          font-weight: 900;
+          text-align: center;
+          font-size: 2.5em;
+          padding: 5px 0;
+          border-radius: 6px;
+          margin-bottom: 10px;
+        }
+      
+        /* Nome do Produto */
+        .print-product {
+          font-size: 2.2em;
+          font-weight: 900;
+          text-align: center;
+          line-height: 1;
+          color: #111;
+          flex-grow: 1; /* Ocupa o espaço disponível */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 10px;
+        }
+      
+        /* Área de Preços */
+        .price-section {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 5px;
+        }
+      
+        /* Preço DE (Sem risco) */
+        .price-de-box {
+          display: flex;
+          align-items: baseline;
+          gap: 5px;
+        }
+        .label-de {
+          font-size: 1.2em;
+          font-weight: 700;
+          color: #444;
+          text-transform: uppercase;
+        }
+        .value-de {
+          font-size: 1.8em;
+          font-weight: 700;
+          color: #444;
+          /* text-decoration: line-through; REMOVIDO */
+        }
+      
+        /* Preço POR */
+        .price-por-wrapper {
+          display: flex;
+          align-items: flex-end; /* Alinha labels na base */
+          gap: 10px;
+        }
+      
+        .label-por {
+          font-size: 1.5em;
+          font-weight: 900;
+          color: #dc2626;
+          margin-bottom: 15px;
+          text-transform: uppercase;
+        }
+      
+        .price-por-container {
+          display: flex;
+          align-items: flex-start;
+          color: #dc2626; /* Vermelho */
+          line-height: 0.8;
+        }
+      
+        .currency-symbol {
+          font-size: 2.5em;
+          font-weight: 900;
+          margin-top: 8px;
+          margin-right: 5px;
+        }
+      
+        .price-integer {
+          font-size: 8.5em;
+          font-weight: 900;
+          letter-spacing: -4px;
+        }
+      
+        .price-decimal {
+          font-size: 2.5em;
+          font-weight: 900;
+          margin-top: 8px;
+        }
+      
+        /* Código de barras / numérico */
+        .footer-code {
+          position: absolute;
+          bottom: 5mm;
+          right: 8mm;
+          font-size: 0.9em;
+          color: #666;
+          font-weight: 600;
+        }
+      }
+    </style>
+  </head>
+  <body class="p-4 md:p-8">
+    <div id="controlPanel" class="max-w-4xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
+      <div class="bg-gray-900 p-6 flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold text-white">Etiqueta de Promoção (We Love Procon)</h1>
+          <p class="text-gray-400 text-sm">Dois produtos diferentes por página.</p>
+        </div>
+        <button onclick="imprimir()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow transition">IMPRIMIR AGORA</button>
+      </div>
+
+      <div class="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+        <div class="p-6 bg-blue-50">
+          <h2 class="text-lg font-black text-blue-900 mb-4 border-b-2 border-blue-200 pb-2">PRODUTO 1 (Superior)</h2>
+
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs font-bold text-gray-500">Título</label>
+              <input type="text" id="titulo1" placeholder="OFERTA" class="w-full p-2 border rounded font-bold uppercase" oninput="updateHalf(1)" />
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-500">Produto</label>
+              <input type="text" id="prod1" placeholder="Nome do Produto" class="w-full p-2 border rounded font-bold" oninput="updateHalf(1)" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs font-bold text-gray-500">Preço DE</label>
+                <input type="text" id="de1" placeholder="0,00" class="w-full p-2 border rounded text-gray-600" oninput="formatAndShow(this, 1)" />
+              </div>
+              <div>
+                <label class="text-xs font-bold text-red-600">Preço POR</label>
+                <input type="text" id="por1" placeholder="0,00" class="w-full p-2 border-2 border-red-200 rounded text-red-600 font-bold" oninput="formatAndShow(this, 1)" />
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-500">Código</label>
+              <input type="text" id="cod1" placeholder="Cód: 000" class="w-full p-2 border rounded text-right text-xs" oninput="updateHalf(1)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-green-50">
+          <h2 class="text-lg font-black text-green-900 mb-4 border-b-2 border-green-200 pb-2">PRODUTO 2 (Inferior)</h2>
+
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <label class="text-xs font-bold text-gray-500">Título</label>
+              <button onclick="copiarDados()" class="text-xs text-blue-600 underline cursor-pointer" title="Copia dados do 1 para o 2">Copiar do 1</button>
+            </div>
+            <input type="text" id="titulo2" placeholder="OFERTA" class="w-full p-2 border rounded font-bold uppercase" oninput="updateHalf(2)" />
+
+            <div>
+              <label class="text-xs font-bold text-gray-500">Produto</label>
+              <input type="text" id="prod2" placeholder="Nome do Produto" class="w-full p-2 border rounded font-bold" oninput="updateHalf(2)" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs font-bold text-gray-500">Preço DE</label>
+                <input type="text" id="de2" placeholder="0,00" class="w-full p-2 border rounded text-gray-600" oninput="formatAndShow(this, 2)" />
+              </div>
+              <div>
+                <label class="text-xs font-bold text-red-600">Preço POR</label>
+                <input type="text" id="por2" placeholder="0,00" class="w-full p-2 border-2 border-red-200 rounded text-red-600 font-bold" oninput="formatAndShow(this, 2)" />
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-500">Código</label>
+              <input type="text" id="cod2" placeholder="Cód: 000" class="w-full p-2 border rounded text-right text-xs" oninput="updateHalf(2)" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="printArea">
+      <div class="poster-half">
+        <div class="print-header" id="out_titulo1">OFERTA</div>
+
+        <div class="print-product" id="out_prod1">NOME DO PRODUTO 1</div>
+
+        <div class="price-section">
+          <div class="price-de-box" id="box_de1">
+            <span class="label-de">DE</span>
+            <span class="value-de" id="out_de1">R$ 0,00</span>
+          </div>
+
+          <div class="price-por-wrapper">
+            <span class="label-por">POR</span>
+            <div class="price-por-container">
+              <span class="currency-symbol">R$</span>
+              <span class="price-integer" id="out_por_int1">0</span>
+              <span class="price-decimal" id="out_por_dec1">,00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-code" id="out_cod1">Cód: 0000</div>
+      </div>
+
+      <div class="poster-half">
+        <div class="print-header" id="out_titulo2">OFERTA</div>
+
+        <div class="print-product" id="out_prod2">NOME DO PRODUTO 2</div>
+
+        <div class="price-section">
+          <div class="price-de-box" id="box_de2" style="display: none">
+            <span class="label-de">DE</span>
+            <span class="value-de" id="out_de2">R$ 0,00</span>
+          </div>
+
+          <div class="price-por-wrapper">
+            <span class="label-por">POR</span>
+            <div class="price-por-container">
+              <span class="currency-symbol">R$</span>
+              <span class="price-integer" id="out_por_int2">0</span>
+              <span class="price-decimal" id="out_por_dec2">,00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-code" id="out_cod2">Cód: 0000</div>
+      </div>
+    </div>
+
+    <script>
+      // Função para formatar input e chamar atualização
+      function formatAndShow(input, idNum) {
+        let value = input.value.replace(/\D/g, '')
+        if (value) {
+          let numeric = parseInt(value) / 100
+          input.value = numeric.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2
+          })
+        } else {
+          input.value = ''
+        }
+        updateHalf(idNum)
+      }
+      
+      // Função principal de atualização
+      function updateHalf(idNum) {
+        // Inputs
+        const titulo = document.getElementById(`titulo${idNum}`).value
+        const prod = document.getElementById(`prod${idNum}`).value
+        const codigo = document.getElementById(`cod${idNum}`).value
+        const de = document.getElementById(`de${idNum}`).value
+        const por = document.getElementById(`por${idNum}`).value
+      
+        // Outputs
+        document.getElementById(`out_titulo${idNum}`).textContent = titulo || 'OFERTA'
+        document.getElementById(`out_prod${idNum}`).textContent = prod || 'NOME DO PRODUTO'
+        document.getElementById(`out_cod${idNum}`).textContent = codigo ? `Cód: ${codigo}` : ''
+      
+        // Lógica Preço DE
+        const boxDe = document.getElementById(`box_de${idNum}`)
+        if (de) {
+          boxDe.style.display = 'flex'
+          document.getElementById(`out_de${idNum}`).textContent = `R$ ${de}`
+        } else {
+          boxDe.style.display = 'none'
+        }
+      
+        // Lógica Preço POR
+        const partes = (por || '0,00').split(',')
+        document.getElementById(`out_por_int${idNum}`).textContent = partes[0] || '0'
+        document.getElementById(`out_por_dec${idNum}`).textContent = `,${partes[1] || '00'}`
+      }
+      
+      // Atalho para copiar dados do 1 para o 2
+      function copiarDados() {
+        document.getElementById('titulo2').value = document.getElementById('titulo1').value
+        document.getElementById('prod2').value = document.getElementById('prod1').value
+        document.getElementById('de2').value = document.getElementById('de1').value
+        document.getElementById('por2').value = document.getElementById('por1').value
+        document.getElementById('cod2').value = document.getElementById('cod1').value
+        updateHalf(2)
+      }
+      
+      function imprimir() {
+        document.getElementById('printArea').style.display = 'flex'
+        setTimeout(() => {
+          window.print()
+          setTimeout(() => {
+            document.getElementById('printArea').style.display = 'none'
+          }, 100)
+        }, 100)
+      }
+      
+      // Inicializa
+      updateHalf(1)
+      updateHalf(2)
+    </script>
+  </body>
+</html>
