@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WELOVEPROCON</title>
+    <title>WELOVEPROCON - Impressão Forçada</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -37,6 +37,9 @@
           width: 210mm;
           height: 297mm;
           background-color: white;
+          /* Garante que o ajuste de cor funcione globalmente se necessário */
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
       
         #controlPanel {
@@ -67,10 +70,10 @@
           border-bottom: none;
         }
       
-        /* Cabeçalho (Título da Oferta) */
+        /* Cabeçalho (Título da Oferta) - ALTERADO AQUI */
         .print-header {
-          background-color: #000;
-          color: #fff;
+          background-color: #000 !important; /* Força o preto */
+          color: #fff !important; /* Força o branco */
           text-transform: uppercase;
           font-weight: 900;
           text-align: center;
@@ -78,6 +81,11 @@
           padding: 5px 0;
           border-radius: 6px;
           margin-bottom: 10px;
+          
+          /* Propriedades mágicas para forçar a impressão do background */
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
         }
       
         /* Nome do Produto */
@@ -120,7 +128,6 @@
           font-size: 1.8em;
           font-weight: 700;
           color: #444;
-          /* text-decoration: line-through; REMOVIDO */
         }
       
         /* Preço POR */
