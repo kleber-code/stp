@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Pedidos - Multiloja</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        [x-cloak] { display: none !important; }
+
+        /* Scrollbar oculta */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Folha A4 */
+        .page-a4 {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            margin: 0 auto;
+            padding: 15mm;
+            box-shadow: 0 0 25px rgba(0,0,0,0.5);
+            position: relative;
+            color: #1a1a1a;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100 h-screen overflow-hidden flex" x-data="app()" x-init="initApp()">
+
+    <div class="w-1/3 min-w-[380px] h-full flex flex-col border-r border-gray-700 bg-gray-800 shadow-2xl z-10">
+        
+        <div class="p-5 border-b border-gray-700 bg-gray-850">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                    <i class="fa-solid fa-file-invoice"></i> Novo Pedido
+                </h1>
+                <button @click="resetPedido()" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded border border-gray-600 transition-colors" title="Limpar formulário">
+                    <i class="fa-solid fa-eraser"></i> Limpar
+                </button>
+            </div>
+
+            <div class="bg-gray-750 p-3 rounded border border-gray-600">
+                <label class="block text-[10px] text-gray-400 uppercase font-bold mb-1 tracking-wider">Selecione a Loja</label>
+                <div class="relative">
+                    <select x-model="lojaIndex" @change="mudarLoja()" class="w-full bg-gray-900 border border-gray-600 text-white text-sm rounded p-2 appearance-none focus:border-emerald-500 outline-none cursor-pointer">
+                        <template x-for="(l, index) in lojasDisponiveis" :key="index">
+                            <option :value="index" x-text="l.nome"></option>
+                        </template>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5 space-y-6 no-scrollbar">
+
+            <div class="animate-fade-in">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 border-b border-gray-700 pb-1">
+                    1. Cliente
+                </h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Nome Completo</label>
+                        <input type="text" x-model="pedido.cliente.nome" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-sm text-white focus:border-emerald-500 outline-none transition-colors">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">CPF / CNPJ</label>
+                            <input type="text" x-model="pedido.cliente.documento" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-sm focus:border-emerald-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">Telefone</label>
+                            <input type="text" x-model="pedido.cliente.telefone" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-sm focus:border-emerald-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Endereço de Entrega</label>
+                        <textarea rows="2" x-model="pedido.cliente.endereco" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-sm focus:border-emerald-500 outline-none resize-none"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-end mb-3 border-b border-gray-700 pb-1 mt-6">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500">2. Produtos</h3>
+                    <button @click="addItem()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded transition-colors flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> Add
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <template x-for="(item, index) in pedido.itens" :key="index">
+                        <div class="bg-gray-700/50 p-3 rounded border border-gray-600 relative group hover:border-gray-500 transition-colors">
+                            <button @click="removeItem(index)" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10">
+                                <i class="fa-solid fa-times"></i>
+                            </button>
+                            
+                            <div class="grid grid-cols-4 gap-2 mb-2">
+                                <div class="col-span-1">
+                                    <label class="block text-[10px] text-gray-400 mb-0.5">Cód.</label>
+                                    <input type="text" x-model="item.codigo" class="w-full bg-gray-800 border border-gray-600 rounded p-1.5 text-xs focus:border-emerald-500 outline-none">
+                                </div>
+                                <div class="col-span-3">
+                                    <label class="block text-[10px] text-gray-400 mb-0.5">Descrição</label>
+                                    <input type="text" x-model="item.descricao" class="w-full bg-gray-800 border border-gray-600 rounded p-1.5 text-xs focus:border-emerald-500 outline-none">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 items-end">
+                                <div>
+                                    <label class="block text-[10px] text-gray-400 mb-0.5">Qtd</label>
+                                    <input type="number" x-model="item.qtd" class="w-full bg-gray-800 border border-gray-600 rounded p-1.5 text-xs text-center focus:border-emerald-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-400 mb-0.5">Unit. (R$)</label>
+                                    <input type="number" step="0.01" x-model="item.unitario" class="w-full bg-gray-800 border border-gray-600 rounded p-1.5 text-xs text-right focus:border-emerald-500 outline-none">
+                                </div>
+                                <div class="text-right pb-1.5">
+                                    <span class="font-mono text-sm text-emerald-400 font-bold" x-text="formatMoney(item.qtd * item.unitario)"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="mt-6 pb-6">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 border-b border-gray-700 pb-1">
+                    3. Pagamento
+                </h3>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Desconto (R$)</label>
+                        <input type="number" x-model="pedido.desconto" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-sm text-right text-emerald-400 font-bold focus:border-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Forma de Pagto</label>
+                        <input type="text" x-model="pedido.pagamento" placeholder="Ex: Cartão 10x" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-sm focus:border-emerald-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Vendedor</label>
+                    <input type="text" x-model="pedido.vendedor" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-sm focus:border-emerald-500 outline-none">
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-gray-850 border-t border-gray-700">
+            <div class="flex justify-between items-center mb-2 px-1">
+                <span class="text-xs text-gray-400 uppercase">Total Final</span>
+                <span class="text-2xl font-bold font-mono text-emerald-400" x-text="formatMoney(totalGeral)"></span>
+            </div>
+            <button @click="generatePDF()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded shadow-lg transition-all flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-print group-hover:scale-110 transition-transform"></i> 
+                Gerar PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 bg-gray-600 h-full overflow-y-auto flex justify-center p-8">
+        
+        <div id="invoice-preview" class="page-a4 flex flex-col">
+            
+            <div class="flex justify-between border-b-2 border-gray-800 pb-6 mb-8">
+                <div class="w-2/3">
+                    <h1 class="text-2xl font-extrabold tracking-tight text-black uppercase leading-tight" x-text="lojaAtual.nome"></h1>
+                    <div class="mt-3 text-sm text-gray-600 space-y-1">
+                        <div x-text="lojaAtual.endereco"></div>
+                        <div class="font-mono text-xs text-gray-500 flex flex-col gap-0.5">
+                            <span>CNPJ: <span x-text="lojaAtual.cnpj"></span></span>
+                            <span>Tel: <span x-text="lojaAtual.telefone"></span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right w-1/3 pl-4">
+                    <div class="inline-block bg-gray-100 rounded px-4 py-2 border border-gray-200 w-full text-center">
+                        <div class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Pedido Nº</div>
+                        <div class="text-2xl font-bold text-black font-mono" x-text="pedido.numero"></div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500 font-mono text-right">
+                        Data: <span x-text="today"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-8 mb-8">
+                <div class="flex-1 bg-gray-50/50 p-3 rounded -ml-3">
+                    <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-2 border-b border-gray-200 pb-1">Destinatário</div>
+                    <div class="text-lg font-bold text-gray-800 uppercase" x-text="pedido.cliente.nome || 'CONSUMIDOR FINAL'"></div>
+                    <div class="text-sm text-gray-600 mt-1 leading-snug" x-text="pedido.cliente.endereco || ''"></div>
+                </div>
+                <div class="w-1/3 p-3">
+                    <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-2 border-b border-gray-200 pb-1">Detalhes</div>
+                    <div class="grid grid-cols-2 gap-y-1 text-sm">
+                        <div class="text-gray-500">Documento:</div>
+                        <div class="font-mono text-right text-gray-800 text-xs" x-text="pedido.cliente.documento || '---'"></div>
+                        <div class="text-gray-500">Telefone:</div>
+                        <div class="font-mono text-right text-gray-800 text-xs" x-text="pedido.cliente.telefone || '---'"></div>
+                        <div class="text-gray-500 mt-2">Vendedor:</div>
+                        <div class="text-right font-bold text-gray-800 mt-2 text-xs" x-text="pedido.vendedor || '---'"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-black">
+                            <th class="py-2 text-xs font-bold text-black uppercase w-20">Cód</th>
+                            <th class="py-2 text-xs font-bold text-black uppercase">Descrição</th>
+                            <th class="py-2 text-xs font-bold text-black uppercase text-center w-16">Qtd</th>
+                            <th class="py-2 text-xs font-bold text-black uppercase text-right w-24">Unit</th>
+                            <th class="py-2 text-xs font-bold text-black uppercase text-right w-24">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        <template x-for="item in pedido.itens">
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-3 font-mono text-xs text-gray-500" x-text="item.codigo"></td>
+                                <td class="py-3 font-medium text-gray-800 uppercase" x-text="item.descricao"></td>
+                                <td class="py-3 text-center text-gray-600" x-text="item.qtd"></td>
+                                <td class="py-3 text-right font-mono text-gray-600" x-text="formatMoney(item.unitario)"></td>
+                                <td class="py-3 text-right font-mono font-bold text-black" x-text="formatMoney(item.qtd * item.unitario)"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-8 flex justify-end">
+                <div class="w-72 bg-gray-50 p-6 rounded border border-gray-200">
+                    <div class="flex justify-between mb-2 text-sm text-gray-600">
+                        <span>Subtotal</span>
+                        <span class="font-mono" x-text="formatMoney(subTotal)"></span>
+                    </div>
+                    <div class="flex justify-between mb-4 text-sm text-emerald-700 font-bold" x-show="pedido.desconto > 0">
+                        <span>Desconto</span>
+                        <span class="font-mono" x-text="'- ' + formatMoney(pedido.desconto)"></span>
+                    </div>
+                    <div class="flex justify-between pt-4 border-t-2 border-black items-end">
+                        <span class="text-base font-bold uppercase">Total Líquido</span>
+                        <span class="text-2xl font-bold font-mono tracking-tight" x-text="formatMoney(totalGeral)"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-auto pt-8 border-t border-gray-300 flex justify-between items-end text-[10px] text-gray-400">
+                <div>
+                    <p class="uppercase font-bold mb-1 text-gray-500">Termos</p>
+                    <p>1. Não é documento fiscal.</p>
+                    <p>2. Confira a mercadoria no ato.</p>
+                    <p>3. Não realizamos içamento.</p>
+                </div>
+                <div class="text-right">
+                    <p class="mb-1" x-show="pedido.pagamento">Forma de Pagto: <span class="font-bold text-gray-600 uppercase" x-text="pedido.pagamento"></span></p>
+                    <p>Emitido em: <span x-text="today"></span></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function app() {
+            return {
+                today: new Date().toLocaleDateString('pt-BR'),
+                lojaIndex: 0, // Índice da loja selecionada
+                
+                // LISTA DE LOJAS (PRÉ-CONFIGURADAS)
+                lojasDisponiveis: [
+                    {
+                        nome: 'SONO COLCHÕES - EPITÁCIO',
+                        endereco: 'Av. Pres. Epitácio Pessoa, 1634 - Torre, João Pessoa - PB, 58040-000',
+                        telefone: '+55 83 9333-7993',
+                        cnpj: '01.040.830/0004-58'
+                    },
+                    {
+                        nome: 'SONO COLCHÕES - TAMBAÚ',
+                        endereco: 'Av. Izidro Gomes, 183 - Tambaú, João Pessoa - PB, 58039-160',
+                        telefone: '+55 83 3113-6435',
+                        cnpj: '01.040.830/0004-58'
+                    },
+                    {
+                        nome: 'SÓ COLCHÕES SPECIALLI',
+                        endereco: 'Av. João Câncio da Silva, 761 - Manaíra, João Pessoa - PB, 58038-341',
+                        telefone: '+55 83 8892-6929',
+                        cnpj: '01.040.830/0002-96'
+                    }
+                ],
+
+                lojaAtual: {}, // Objeto que será preenchido
+
+                pedido: {
+                    numero: Math.floor(Math.random() * 90000) + 10000,
+                    vendedor: '',
+                    cliente: { nome: '', documento: '', telefone: '', endereco: '' },
+                    itens: [{ codigo: '', descricao: '', qtd: 1, unitario: 0 }],
+                    desconto: 0,
+                    pagamento: ''
+                },
+
+                // Inicialização
+                initApp() {
+                    // Recuperar loja selecionada anteriormente
+                    const savedIndex = localStorage.getItem('loja_selecionada_idx');
+                    if (savedIndex !== null) {
+                        this.lojaIndex = parseInt(savedIndex);
+                    }
+                    this.mudarLoja(); // Aplica a loja inicial
+
+                    // Recuperar pedido não finalizado
+                    const savedOrder = localStorage.getItem('pedido_temp');
+                    if (savedOrder) this.pedido = JSON.parse(savedOrder);
+
+                    // Auto-save do pedido
+                    this.$watch('pedido', (val) => {
+                        localStorage.setItem('pedido_temp', JSON.stringify(val));
+                    });
+                },
+
+                // Função chamada ao mudar o dropdown
+                mudarLoja() {
+                    this.lojaAtual = this.lojasDisponiveis[this.lojaIndex];
+                    localStorage.setItem('loja_selecionada_idx', this.lojaIndex);
+                },
+
+                // Cálculos
+                get subTotal() { return this.pedido.itens.reduce((acc, i) => acc + (i.qtd * i.unitario), 0); },
+                get totalGeral() { return Math.max(0, this.subTotal - this.pedido.desconto); },
+
+                // Ações
+                addItem() { this.pedido.itens.push({ codigo: '', descricao: '', qtd: 1, unitario: 0 }); },
+                removeItem(idx) { if (this.pedido.itens.length > 1) this.pedido.itens.splice(idx, 1); },
+                
+                resetPedido() {
+                    if(confirm('Limpar dados do cliente e itens?')) {
+                        this.pedido = {
+                            numero: Math.floor(Math.random() * 90000) + 10000,
+                            vendedor: this.pedido.vendedor, // Mantém vendedor
+                            cliente: { nome: '', documento: '', telefone: '', endereco: '' },
+                            itens: [{ codigo: '', descricao: '', qtd: 1, unitario: 0 }],
+                            desconto: 0,
+                            pagamento: ''
+                        };
+                    }
+                },
+                
+                formatMoney(val) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val); },
+
+                generatePDF() {
+                    const el = document.getElementById('invoice-preview');
+                    const btn = event.currentTarget;
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+                    
+                    const opt = {
+                        margin: 0,
+                        filename: `pedido_${this.pedido.numero}.pdf`,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+                    html2pdf().set(opt).from(el).save().then(() => btn.innerHTML = originalText);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
