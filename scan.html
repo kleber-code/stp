@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Scanner Biométrico | Ecossistema de Pressão Virtual</title>
+    <title>Scanner Volumétrico de Superfície</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Roboto:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
         body { 
             margin: 0; 
-            font-family: 'Roboto', sans-serif; 
-            background-color: #040810; 
-            color: #fff; 
+            font-family: 'Inter', sans-serif; 
+            background-color: #020617; 
+            color: #f8fafc; 
             height: 100vh; 
             overflow: hidden; 
             display: flex;
             flex-direction: column;
         }
 
-        /* Área do Scanner */
         #scanner-container { 
             position: relative; 
             width: 100%; 
@@ -27,68 +26,65 @@
             overflow: hidden; 
         }
         
-        video, canvas { 
+        /* O vídeo original fica invisível, usamos apenas o Canvas processado */
+        video { display: none; }
+        
+        canvas { 
             position: absolute; 
             top: 0; left: 0;
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
-            transform: scaleX(-1); /* Espelho */
-        }
-        
-        video { opacity: 0.4; }
-        
-        /* Canvas para o esqueleto e calor - efeito glow */
-        canvas { 
             z-index: 10; 
-            filter: drop-shadow(0 0 15px #3b82f6) blur(1px);
         }
 
-        /* Painel de Controle (Visual Premium) */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 30;
+            display: flex;
+            justify-content: space-between;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+        }
+
+        .cam-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .controls-panel { 
             position: absolute; 
             bottom: 0; 
             width: 100%; 
-            background: linear-gradient(180deg, rgba(4, 8, 16, 0) 0%, rgba(4, 8, 16, 0.95) 30%, rgba(4, 8, 16, 1) 100%);
-            border-top: 1px solid rgba(59, 130, 246, 0.2);
-            padding: 30px 24px 50px 24px; 
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            padding: 24px; 
             box-sizing: border-box; 
             z-index: 20; 
-            border-radius: 30px 30px 0 0;
+            border-radius: 24px 24px 0 0;
         }
 
-        .header-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        h3 { margin: 0; font-weight: 900; font-size: 20px; letter-spacing: -0.5px; text-transform: uppercase;}
+        .input-group { display: flex; gap: 12px; margin-bottom: 20px; }
         
-        .status-badge {
-            font-family: 'Roboto Mono', monospace;
-            background: rgba(59, 130, 246, 0.1);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-            color: #3b82f6;
-            border: 1px solid rgba(59, 130, 246, 0.2);
-        }
-
-        .input-group {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
         .input-box {
             flex: 1;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 16px;
-            padding: 12px 18px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -99,90 +95,54 @@
             border: none;
             color: white;
             font-size: 18px;
-            font-weight: 700;
+            font-weight: 900;
             width: 50%;
             outline: none;
-            font-family: 'Roboto Mono', monospace;
         }
         
-        .input-box span { font-size: 14px; color: #64748b; font-weight: 700; text-transform: uppercase;}
+        .input-box span { font-size: 13px; color: #64748b; font-weight: 700; }
 
-        button { 
+        .main-btn { 
             width: 100%;
-            background: #3b82f6; 
-            color: white; 
+            background: #10b981; 
+            color: #022c22; 
             border: none; 
-            padding: 18px; 
-            border-radius: 16px; 
+            padding: 16px; 
+            border-radius: 14px; 
             font-size: 16px;
-            font-weight: 700; 
+            font-weight: 900; 
             cursor: pointer; 
             text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
-            transition: all 0.2s ease;
         }
         
-        button:active { transform: scale(0.97) translateY(1px); }
-        button:disabled { background: #475569; box-shadow: none; cursor: not-allowed;}
-        
-        /* Barra de Calor Virtual (Legenda) */
-        #heatmap-legend {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            height: 150px;
-            width: 25px;
-            background: linear-gradient(180deg, rgba(239, 68, 68, 1) 0%, rgba(245, 158, 11, 1) 40%, rgba(34, 197, 94, 1) 70%, rgba(59, 130, 246, 1) 100%);
-            border-radius: 8px;
-            z-index: 50;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            display: none; /* Só aparece quando o scanner iniciar */
-        }
-        #heatmap-legend::after {
-            content: "PRESSÃO VIRTUAL";
-            position: absolute;
-            bottom: -35px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            color: rgba(255,255,255,0.6);
-            white-space: nowrap;
-            font-weight: 700;
-        }
-        
+        #statusText { color: #10b981; font-size: 12px; font-weight: 700; text-transform: uppercase;}
     </style>
     
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
     <div id="scanner-container">
+        <div class="top-bar">
+            <span id="statusText">Aguardando...</span>
+            <button class="cam-btn" id="switchCamBtn">🔄 Trocar Câmera</button>
+        </div>
         
-        <div id="heatmap-legend"></div>
         <video id="videoElement" autoplay playsinline></video>
         <canvas id="outputCanvas"></canvas>
         
         <div class="controls-panel">
-            <div class="header-title">
-                <h3>Scanner Biométrico</h3>
-                <span id="statusText" class="status-badge">PRONTO</span>
-            </div>
-
             <div class="input-group">
                 <div class="input-box">
-                    <input type="number" id="pesoInput" value="75" placeholder="Peso">
+                    <input type="number" id="pesoInput" value="80">
                     <span>KG</span>
                 </div>
                 <div class="input-box">
-                    <input type="number" id="alturaInput" value="175" placeholder="Alt">
+                    <input type="number" id="alturaInput" value="175">
                     <span>CM</span>
                 </div>
             </div>
-
-            <button id="startBtn">Iniciar Simulação 3D</button>
+            <button class="main-btn" id="startBtn">Ligar Matriz de Escaneamento</button>
         </div>
     </div>
 
@@ -191,191 +151,158 @@
         const canvasElement = document.getElementById('outputCanvas');
         const canvasCtx = canvasElement.getContext('2d');
         const startBtn = document.getElementById('startBtn');
+        const switchCamBtn = document.getElementById('switchCamBtn');
         const statusText = document.getElementById('statusText');
-        const legend = document.getElementById('heatmap-legend');
         
-        // Definição das conexões do esqueleto biomecânico (Landmarks MediaPipe)
-        const BONE_CONNECTIONS = [
-            // Tronco e Cabeça (Alto impacto de volume/pressão)
-            [11, 12], // Ombros
-            [11, 23], // Ombro Esq - Quadril Esq
-            [12, 24], // Ombro Dir - Quadril Dir
-            [23, 24], // Quadris (Bacia)
-            [11, 0], [12, 0], // Ombros para nariz (simulação cabeça/pescoço)
-            
-            // Braços (Baixo impacto de pressão)
-            [11, 13], [13, 15], // Braço e antebraço esquerdo
-            [12, 14], [14, 16], // Braço e antebraço direito
-            
-            // Pernas (Alto impacto nas coxas, médio impacto nos joelhos)
-            [23, 25], [25, 27], // Coxa e perna esquerda
-            [24, 26], [26, 28]  // Coxa e perna direita
-        ];
+        let currentStream = null;
+        let facingMode = 'environment'; // Começa com a câmera traseira
+        let isScanning = false;
 
-        // Mapeia o peso relativo/volume de cada conexão para pressão virtual
-        // 'weightMultiplier' alto = Mais volume corporal naquela área.
-        const CONNECTION_PROFILE = [
-            { id: [11, 12], weightMultiplier: 0.9, name: 'Shoulders' }, // Volume ombros
-            { id: [11, 23], weightMultiplier: 0.7, name: 'L-Torso' },   // Volume tronco esq
-            { id: [12, 24], weightMultiplier: 0.7, name: 'R-Torso' },   // Volume tronco dir
-            { id: [23, 24], weightMultiplier: 1.0, name: 'Hips' },      // Bacia (Área de MAIOR volume)
-            { id: [11, 0], weightMultiplier: 0.5, name: 'Neck-L' }, [12, 0], // Cabeça
-            
-            // Pernas
-            { id: [23, 25], weightMultiplier: 0.8, name: 'L-Thigh' },  // Coxa esq
-            { id: [24, 26], weightMultiplier: 0.8, name: 'R-Thigh' },  // Coxa dir
-            
-            // Braços e pernas inferiores (Padrão baixo volume/pressão)
-            [11, 13], [13, 15], [12, 14], [14, 16], // Braços
-            [25, 27], [26, 28] // Pernas inferioes
-        ];
-
-        // Normaliza as conexões para buscar pelo perfil facilmente
-        const PROFILE_MAP = new Map(
-            CONNECTION_PROFILE.map(entry => {
-                if (entry.id) return [entry.id.sort().join(','), entry.weightMultiplier];
-                return [entry.sort().join(','), 0.3]; // Padrão baixo volume
-            })
-        );
-
-        // Calcula multiplicador de pressão baseado no IMC
-        function getBMIMultiplier() {
-            const peso = parseFloat(document.getElementById('pesoInput').value) || 75;
-            const alturaM = (parseFloat(document.getElementById('alturaInput').value) || 175) / 100;
-            const imc = peso / (alturaM * alturaM);
-            // IMC Ideal ~22. Fornece fator base 1.0. Se for maior (volume maior), aumenta a intensidade.
-            return Math.max(0.5, imc / 22); 
-        }
-
-        // Traduz valor de volume/pressão (0.0 a 1.0) para gradiente térmico
-        function getPressureColor(intensity) {
-            intensity = Math.max(0, Math.min(1, intensity)); // Clampa
-            
-            // Mistura de cores para efeito térmico mais rico
-            const colors = [
-                { r: 59,  g: 130, b: 246, p: 0.0 }, // Blue-500 (Nenhum/Baixo contato)
-                { r: 34,  g: 197, b: 94,  p: 0.3 }, // Green-500 (Volume médio/baixo)
-                { r: 245, g: 158, b: 11,  p: 0.6 }, // Amber-500 (Volume médio/alto)
-                { r: 239, g: 68, b: 68,  p: 0.8 }, // Red-500 (Pressão virtual alta)
-                { r: 255, g: 255, b: 255, p: 1.0 }  // White (Área crítica)
-            ];
-
-            let upperIndex = 1;
-            for (let i = 1; i < colors.length - 1; i++) {
-                if (intensity > colors[i].p) upperIndex = i + 1;
+        // Motor de Troca de Câmera Nativo
+        async function startCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
             }
-            let lowerIndex = upperIndex - 1;
-
-            const lowerColor = colors[lowerIndex];
-            const upperColor = colors[upperIndex];
-            const t = (intensity - lowerColor.p) / (upperColor.p - lowerColor.p); // Fator de interpolação
-
-            const r = Math.round(lowerColor.r + (upperColor.r - lowerColor.r) * t);
-            const g = Math.round(lowerColor.g + (upperColor.g - lowerColor.g) * t);
-            const b = Math.round(lowerColor.b + (upperColor.b - lowerColor.b) * t);
-
-            return `rgb(${r}, ${g}, ${b})`;
+            
+            try {
+                currentStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } }
+                });
+                videoElement.srcObject = currentStream;
+                
+                // Espelha o canvas apenas se for a câmera frontal
+                if (facingMode === 'user') {
+                    canvasElement.style.transform = "scaleX(-1)";
+                } else {
+                    canvasElement.style.transform = "scaleX(1)";
+                }
+                
+            } catch (err) {
+                alert("Erro ao acessar a câmera. Verifique as permissões.");
+            }
         }
 
-        // Processamento de cada frame da câmera
+        switchCamBtn.addEventListener('click', () => {
+            facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+            if (isScanning) startCamera();
+        });
+
+        // Lógica de Renderização Volumétrica
+        function getPressureFactor() {
+            const peso = parseFloat(document.getElementById('pesoInput').value) || 80;
+            const altura = (parseFloat(document.getElementById('alturaInput').value) || 175) / 100;
+            const imc = peso / (altura * altura);
+            return Math.min(1.8, Math.max(0.6, imc / 22));
+        }
+
+        function drawHeatGradient(ctx, x, y, radius, intensity) {
+            const grad = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            grad.addColorStop(0, `rgba(239, 68, 68, ${intensity})`);     // Vermelho vivo no centro
+            grad.addColorStop(0.4, `rgba(245, 158, 11, ${intensity * 0.7})`); // Amarelo
+            grad.addColorStop(0.8, `rgba(16, 185, 129, ${intensity * 0.4})`); // Verde
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+
         function onResults(results) {
             if (!canvasElement.width) {
                 canvasElement.width = videoElement.videoWidth;
                 canvasElement.height = videoElement.videoHeight;
-                statusText.innerText = "ESCANEO ATIVO";
-                statusText.style.color = "#3b82f6";
+                statusText.innerText = "Matriz Ativa";
             }
             
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-            if (results.poseLandmarks) {
-                const landmarks = results.poseLandmarks;
-                const bmiFactor = getBMIMultiplier();
+            // 1. Desenha o fundo (Vídeo real escurecido)
+            canvasCtx.globalCompositeOperation = 'source-over';
+            canvasCtx.globalAlpha = 0.4; // Deixa o ambiente escuro
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            // 2. Avalia a Segmentação (Silhueta do Corpo)
+            if (results.segmentationMask) {
+                canvasCtx.globalAlpha = 1.0;
                 
-                // --- DESENHAR ESQUELETO DE CALOR BIOMECÂNICO ---
-                for (const connection of BONE_CONNECTIONS) {
-                    const fromId = connection[0];
-                    const toId = connection[1];
-                    const fromPoint = landmarks[fromId];
-                    const toPoint = landmarks[toId];
+                // Desenha a máscara da silhueta preenchida com um "fundo" de pressão (Azul Frio)
+                canvasCtx.drawImage(results.segmentationMask, 0, 0, canvasElement.width, canvasElement.height);
+                canvasCtx.globalCompositeOperation = 'source-in'; // Tudo desenhado agora só aparece DENTRO da silhueta
+                
+                // Preenche o corpo todo com a cor base
+                canvasCtx.fillStyle = 'rgba(14, 165, 233, 0.4)'; // Azul base da superfície
+                canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
 
-                    if (fromPoint && toPoint && fromPoint.visibility > 0.6 && toPoint.visibility > 0.6) {
-                        const fromX = fromPoint.x * canvasElement.width;
-                        const fromY = fromPoint.y * canvasElement.height;
-                        const toX = toPoint.x * canvasElement.width;
-                        const toY = toPoint.y * canvasElement.height;
+                // 3. Aplica os "pesos" baseados na estrutura interna, mas limitados pela silhueta
+                if (results.poseLandmarks) {
+                    const lm = results.poseLandmarks;
+                    const w = canvasElement.width;
+                    const h = canvasElement.height;
+                    const pressureFactor = getPressureFactor();
 
-                        // Tenta inferir volume baseado no multiplicador da área E na inferência 3D da câmera
-                        const key = connection.slice().sort().join(',');
-                        const volumeMultiplier = PROFILE_MAP.get(key) || 0.3;
-                        
-                        // Fator que tenta traduzir profundidade (z) do esqueleto para pressão
-                        const rawIntensity = volumeMultiplier * bmiFactor;
-                        
-                        // Determina cor (gradiente térmico)
-                        const lineColor = getPressureColor(rawIntensity);
-                        
-                        // Determina espessura (quanto mais pressão/volume, mais "gorda" a linha)
-                        const thickness = Math.max(1.5, Math.min(25, rawIntensity * 30));
+                    // Mapeamento de centros de massa para gerar volume
+                    // Em vez de ossos, tratamos essas áreas como "poços de gravidade"
+                    const massCenters = [
+                        { point: lm[23], radius: 180, p: 1.0 }, // Quadril Esq (Core)
+                        { point: lm[24], radius: 180, p: 1.0 }, // Quadril Dir (Core)
+                        { point: lm[11], radius: 140, p: 0.8 }, // Omoplata Esq
+                        { point: lm[12], radius: 140, p: 0.8 }, // Omoplata Dir
+                    ];
 
-                        // Renderiza a "linha de pressão" biomecânica
-                        canvasCtx.beginPath();
-                        canvasCtx.moveTo(fromX, fromY);
-                        canvasCtx.lineTo(toX, toY);
-                        canvasCtx.lineWidth = thickness;
-                        canvasCtx.strokeStyle = lineColor;
-                        canvasCtx.lineCap = "round";
-                        canvasCtx.stroke();
-                        
-                        // Adiciona um ponto (articulação) com a mesma lógica térmcia
-                        canvasCtx.beginPath();
-                        canvasCtx.arc(fromX, fromY, thickness/2 + 1, 0, 2*Math.PI);
-                        canvasCtx.fillStyle = lineColor;
-                        canvasCtx.fill();
-                    }
+                    canvasCtx.globalCompositeOperation = 'screen'; // Mistura as cores térmicas
+
+                    massCenters.forEach(center => {
+                        if (center.point && center.point.visibility > 0.5) {
+                            const x = center.point.x * w;
+                            const y = center.point.y * h;
+                            drawHeatGradient(canvasCtx, x, y, center.radius * pressureFactor, center.p * pressureFactor);
+                        }
+                    });
                 }
             }
+            
+            // Retorna ao estado normal para o próximo frame
+            canvasCtx.globalCompositeOperation = 'source-over';
         }
 
-        // Configuração da IA de Visão Computacional
+        // Configuração da IA avançada (Com Segmentação de Silhueta Ativada)
         const pose = new Pose({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
         }});
 
         pose.setOptions({
-            modelComplexity: 0, // Mais rápido para garantir fluidez mobile na apresentação
+            modelComplexity: 1, // Melhor precisão na silhueta
             smoothLandmarks: true,
+            enableSegmentation: true, // CRÍTICO: Ativa o recorte real do corpo
+            smoothSegmentation: true,
             minDetectionConfidence: 0.5,
             minTrackingConfidence: 0.5
         });
         pose.onResults(onResults);
 
-        // Gatilho do botão para iniciar
-        startBtn.addEventListener('click', () => {
-            startBtn.disabled = true;
-            startBtn.innerText = "MODELANDO VOLUME CORPOREO...";
-            statusText.innerText = "INICIANDO CÂMERA";
-            statusText.style.color = "#f59e0b"; // Amarelo
-            
-            navigator.mediaDevices.getUserMedia({ video: true })
-            .then(() => {
-                const camera = new Camera(videoElement, {
-                    onFrame: async () => { await pose.send({image: videoElement}); },
-                    width: 640,
-                    height: 480,
-                    facingMode: "user"
-                });
+        // Loop manual de captura de frames para não depender do utilitário frágil do Google
+        async function processVideoFrame() {
+            if (videoElement.readyState >= 2) {
+                await pose.send({image: videoElement});
+            }
+            if (isScanning) {
+                requestAnimationFrame(processVideoFrame);
+            }
+        }
 
-                camera.start().then(() => {
-                    startBtn.style.display = 'none';
-                    legend.style.display = 'block';
-                });
-            }).catch(err => {
-                statusText.innerText = "ERRO NA CÂMERA";
-                statusText.style.color = "#ef4444"; // Vermelho
-                startBtn.innerText = "Erro. Verifique permissões.";
-                console.error("Critical error requestion camera:", err);
-            });
+        startBtn.addEventListener('click', async () => {
+            startBtn.disabled = true;
+            startBtn.innerText = "Iniciando Sensores...";
+            
+            await startCamera();
+            isScanning = true;
+            
+            // Garante que o vídeo está rodando antes de processar
+            videoElement.onloadeddata = () => {
+                startBtn.style.display = 'none';
+                processVideoFrame();
+            };
         });
     </script>
 </body>
