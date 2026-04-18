@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Biométrico | Simulação de Pressão</title>
+    <style>
+        /* Design Minimalista e Foco na UI */
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background-color: #0f172a; 
+            color: #f8fafc; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        #app-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 500px; 
+            aspect-ratio: 3/4; 
+            background: #1e293b; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); 
+            border: 1px solid #334155;
+        }
+        video { 
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            opacity: 0.4; /* Escurece o vídeo para destacar o mapa de calor */
+            transform: scaleX(-1); /* Efeito espelho */
+        }
+        canvas { 
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            z-index: 10; 
+            transform: scaleX(-1);
+        }
+        .ui-panel { 
+            position: absolute; 
+            bottom: 0; 
+            width: 100%; 
+            padding: 30px 20px; 
+            box-sizing: border-box; 
+            background: linear-gradient(transparent, rgba(15, 23, 42, 0.95) 40%); 
+            z-index: 20; 
+            text-align: center; 
+        }
+        h3 { margin: 0 0 8px 0; font-weight: 600; letter-spacing: -0.5px; }
+        p { margin: 0 0 20px 0; font-size: 14px; color: #94a3b8; }
+        button { 
+            background: #3b82f6; 
+            color: white; 
+            border: none; 
+            padding: 14px 28px; 
+            border-radius: 12px; 
+            font-size: 15px;
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            width: 80%;
+        }
+        button:hover { background: #2563eb; transform: translateY(-1px); }
+        button:disabled { background: #475569; cursor: not-allowed; transform: none; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div id="app-container">
+        <video id="videoElement" autoplay playsinline></video>
+        <canvas id="outputCanvas"></canvas>
+        <div class="ui-panel">
+            <h3>Diagnóstico Postural 3D</h3>
+            <p>Fique de frente para a câmera para mapear a pressão.</p>
+            <button id="startBtn">Ativar Câmera</button>
+        </div>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('outputCanvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+
+        // Função para desenhar o "calor" da pressão
+        function drawHeatPoint(ctx, x, y, intensity, radius) {
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            // Simula as cores térmicas: Centro vermelho, bordas amarelas e verdes
+            gradient.addColorStop(0, `rgba(239, 68, 68, ${intensity})`);     // Red-500
+            gradient.addColorStop(0.4, `rgba(245, 158, 11, ${intensity * 0.8})`); // Amber-500
+            gradient.addColorStop(0.8, `rgba(34, 197, 94, ${intensity * 0.3})`);  // Green-500
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
+
+        // Processamento de cada frame da câmera
+        function onResults(results) {
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.poseLandmarks) {
+                const width = canvasElement.width;
+                const height = canvasElement.height;
+                const landmarks = results.poseLandmarks;
+
+                // Definindo as áreas de maior peso/pressão no colchão
+                // 11/12: Ombros | 23/24: Quadris
+                const pressureZones = [
+                    { point: landmarks[11], pressure: 0.85, radius: 90 }, // Ombro Esq
+                    { point: landmarks[12], pressure: 0.85, radius: 90 }, // Ombro Dir
+                    { point: landmarks[23], pressure: 1.0, radius: 120 }, // Quadril Esq (Maior pressão)
+                    { point: landmarks[24], pressure: 1.0, radius: 120 }  // Quadril Dir
+                ];
+
+                // Renderiza o mapa de calor sobre o corpo detectado
+                pressureZones.forEach(zone => {
+                    if(zone.point && zone.point.visibility > 0.6) {
+                        const x = zone.point.x * width;
+                        const y = zone.point.y * height;
+                        drawHeatPoint(canvasCtx, x, y, zone.pressure, zone.radius);
+                    }
+                });
+            }
+        }
+
+        // Configuração da IA de Visão Computacional (MediaPipe)
+        const pose = new Pose({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+        }});
+
+        pose.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        pose.onResults(onResults);
+
+        // Gatilho do botão para iniciar
+        startBtn.addEventListener('click', () => {
+            startBtn.innerText = "Calibrando sensores...";
+            startBtn.disabled = true;
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await pose.send({image: videoElement});
+                },
+                width: 640,
+                height: 480
+            });
+
+            camera.start().then(() => {
+                startBtn.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
