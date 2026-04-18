@@ -2,102 +2,220 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Biométrico | Simulação de Pressão</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scanner Biométrico 3D | V2</title>
     <style>
-        /* Design Minimalista e Foco na UI */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
         body { 
             margin: 0; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            background-color: #0f172a; 
-            color: #f8fafc; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
+            font-family: 'Inter', sans-serif; 
+            background-color: #000; 
+            color: #fff; 
             height: 100vh; 
             overflow: hidden; 
+            display: flex;
+            flex-direction: column;
         }
-        #app-container { 
+
+        /* Área do Scanner */
+        #scanner-container { 
             position: relative; 
             width: 100%; 
-            max-width: 500px; 
-            aspect-ratio: 3/4; 
-            background: #1e293b; 
-            border-radius: 20px; 
+            flex-grow: 1;
+            background: #111; 
             overflow: hidden; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6); 
-            border: 1px solid #334155;
         }
-        video { 
+        
+        video, canvas { 
             position: absolute; 
+            top: 0; left: 0;
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
-            opacity: 0.4; /* Escurece o vídeo para destacar o mapa de calor */
-            transform: scaleX(-1); /* Efeito espelho */
+            transform: scaleX(-1); /* Espelho */
         }
-        canvas { 
-            position: absolute; 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            z-index: 10; 
-            transform: scaleX(-1);
-        }
-        .ui-panel { 
+        
+        video { opacity: 0.3; }
+        canvas { z-index: 10; filter: blur(2px); } /* Suaviza o mapa de calor */
+
+        /* Painel de Controle (Glassmorphism) */
+        .controls-panel { 
             position: absolute; 
             bottom: 0; 
             width: 100%; 
-            padding: 30px 20px; 
+            background: rgba(15, 23, 42, 0.7); 
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px 20px 40px 20px; 
             box-sizing: border-box; 
-            background: linear-gradient(transparent, rgba(15, 23, 42, 0.95) 40%); 
             z-index: 20; 
-            text-align: center; 
+            border-radius: 24px 24px 0 0;
         }
-        h3 { margin: 0 0 8px 0; font-weight: 600; letter-spacing: -0.5px; }
-        p { margin: 0 0 20px 0; font-size: 14px; color: #94a3b8; }
+
+        .header-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        h3 { margin: 0; font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+        .status-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .input-box {
+            flex: 1;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .input-box input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            width: 50%;
+            outline: none;
+        }
+        
+        .input-box span { font-size: 12px; color: #64748b; font-weight: 600;}
+
         button { 
+            width: 100%;
             background: #3b82f6; 
             color: white; 
             border: none; 
-            padding: 14px 28px; 
-            border-radius: 12px; 
-            font-size: 15px;
+            padding: 16px; 
+            border-radius: 14px; 
+            font-size: 16px;
             font-weight: 600; 
             cursor: pointer; 
-            transition: all 0.2s ease; 
-            width: 80%;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
         }
-        button:hover { background: #2563eb; transform: translateY(-1px); }
-        button:disabled { background: #475569; cursor: not-allowed; transform: none; }
+        
+        button:active { transform: scale(0.98); }
+
+        /* Console de Debug na Tela */
+        #on-screen-log {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 10px;
+            color: #10b981;
+            overflow-y: auto;
+            z-index: 50;
+            pointer-events: none; /* Deixa clicar através dele */
+        }
+        .log-error { color: #ef4444; }
+        .log-warn { color: #f59e0b; }
     </style>
+    
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <div id="app-container">
+
+    <div id="scanner-container">
+        <div id="on-screen-log">Iniciando sistema...<br></div>
+        
         <video id="videoElement" autoplay playsinline></video>
         <canvas id="outputCanvas"></canvas>
-        <div class="ui-panel">
-            <h3>Diagnóstico Postural 3D</h3>
-            <p>Fique de frente para a câmera para mapear a pressão.</p>
-            <button id="startBtn">Ativar Câmera</button>
+        
+        <div class="controls-panel">
+            <div class="header-title">
+                <h3>Scanner de Pressão</h3>
+                <span id="statusText" class="status-badge">Aguardando</span>
+            </div>
+
+            <div class="input-group">
+                <div class="input-box">
+                    <input type="number" id="pesoInput" value="75" placeholder="Peso">
+                    <span>KG</span>
+                </div>
+                <div class="input-box">
+                    <input type="number" id="alturaInput" value="175" placeholder="Alt">
+                    <span>CM</span>
+                </div>
+            </div>
+
+            <button id="startBtn">Iniciar Escaneamento 3D</button>
         </div>
     </div>
 
     <script>
+        // --- 1. SISTEMA DE LOG NA TELA ---
+        const logContainer = document.getElementById('on-screen-log');
+        function addLog(msg, type = 'info') {
+            const span = document.createElement('span');
+            span.className = type === 'error' ? 'log-error' : type === 'warn' ? 'log-warn' : '';
+            span.innerHTML = `> ${msg}<br>`;
+            logContainer.appendChild(span);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Sobrescrevendo o console padrão para capturar erros ocultos
+        const originalLog = console.log;
+        const originalError = console.error;
+        console.log = (...args) => { addLog(args.join(' ')); originalLog(...args); };
+        console.error = (...args) => { addLog(args.join(' '), 'error'); originalError(...args); };
+        window.onerror = (msg, url, line) => { addLog(`Erro na linha ${line}: ${msg}`, 'error'); return false; };
+
+        // --- 2. LÓGICA DO APP ---
         const videoElement = document.getElementById('videoElement');
         const canvasElement = document.getElementById('outputCanvas');
         const canvasCtx = canvasElement.getContext('2d');
         const startBtn = document.getElementById('startBtn');
+        const statusText = document.getElementById('statusText');
+        const pesoInput = document.getElementById('pesoInput');
+        const alturaInput = document.getElementById('alturaInput');
 
-        // Função para desenhar o "calor" da pressão
-        function drawHeatPoint(ctx, x, y, intensity, radius) {
+        // Calcula multiplicador de pressão baseado no IMC
+        function getPressureMultiplier() {
+            const peso = parseFloat(pesoInput.value) || 75;
+            const alturaM = (parseFloat(alturaInput.value) || 175) / 100;
+            const imc = peso / (alturaM * alturaM);
+            
+            // IMC Base ~22. Se for maior, aumenta a pressão. Se menor, diminui.
+            let multiplicador = imc / 22; 
+            return Math.max(0.5, Math.min(multiplicador, 1.8)); // Limites de segurança
+        }
+
+        function drawHeatPoint(ctx, x, y, baseIntensity, baseRadius) {
+            const multiplier = getPressureMultiplier();
+            const intensity = Math.min(baseIntensity * multiplier, 1.0);
+            const radius = baseRadius * multiplier;
+
             const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-            // Simula as cores térmicas: Centro vermelho, bordas amarelas e verdes
-            gradient.addColorStop(0, `rgba(239, 68, 68, ${intensity})`);     // Red-500
-            gradient.addColorStop(0.4, `rgba(245, 158, 11, ${intensity * 0.8})`); // Amber-500
-            gradient.addColorStop(0.8, `rgba(34, 197, 94, ${intensity * 0.3})`);  // Green-500
+            gradient.addColorStop(0, `rgba(239, 68, 68, ${intensity})`);     
+            gradient.addColorStop(0.3, `rgba(245, 158, 11, ${intensity * 0.8})`); 
+            gradient.addColorStop(0.6, `rgba(34, 197, 94, ${intensity * 0.3})`);  
             gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
             ctx.beginPath();
@@ -106,10 +224,14 @@
             ctx.fill();
         }
 
-        // Processamento de cada frame da câmera
         function onResults(results) {
-            canvasElement.width = videoElement.videoWidth;
-            canvasElement.height = videoElement.videoHeight;
+            if (!canvasElement.width) {
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+                statusText.innerText = "Escaneando";
+                statusText.style.color = "#10b981"; // Verde
+            }
+            
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
             if (results.poseLandmarks) {
@@ -117,16 +239,17 @@
                 const height = canvasElement.height;
                 const landmarks = results.poseLandmarks;
 
-                // Definindo as áreas de maior peso/pressão no colchão
-                // 11/12: Ombros | 23/24: Quadris
+                // Pontos: 11/12 (Ombros), 23/24 (Quadris)
                 const pressureZones = [
-                    { point: landmarks[11], pressure: 0.85, radius: 90 }, // Ombro Esq
-                    { point: landmarks[12], pressure: 0.85, radius: 90 }, // Ombro Dir
-                    { point: landmarks[23], pressure: 1.0, radius: 120 }, // Quadril Esq (Maior pressão)
-                    { point: landmarks[24], pressure: 1.0, radius: 120 }  // Quadril Dir
+                    { point: landmarks[11], pressure: 0.7, radius: 80 },
+                    { point: landmarks[12], pressure: 0.7, radius: 80 },
+                    { point: landmarks[23], pressure: 0.9, radius: 110 },
+                    { point: landmarks[24], pressure: 0.9, radius: 110 }
                 ];
 
-                // Renderiza o mapa de calor sobre o corpo detectado
+                // Efeito compositing para misturar as cores como luz
+                canvasCtx.globalCompositeOperation = "screen";
+
                 pressureZones.forEach(zone => {
                     if(zone.point && zone.point.visibility > 0.6) {
                         const x = zone.point.x * width;
@@ -134,38 +257,58 @@
                         drawHeatPoint(canvasCtx, x, y, zone.pressure, zone.radius);
                     }
                 });
+                
+                canvasCtx.globalCompositeOperation = "source-over"; // Reseta
             }
         }
 
-        // Configuração da IA de Visão Computacional (MediaPipe)
+        // Configuração da IA
+        console.log("Baixando modelos neurais...");
         const pose = new Pose({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
         }});
 
         pose.setOptions({
-            modelComplexity: 1,
+            modelComplexity: 0, // Mais rápido para celular
             smoothLandmarks: true,
             minDetectionConfidence: 0.5,
             minTrackingConfidence: 0.5
         });
         pose.onResults(onResults);
 
-        // Gatilho do botão para iniciar
-        startBtn.addEventListener('click', () => {
-            startBtn.innerText = "Calibrando sensores...";
-            startBtn.disabled = true;
+        startBtn.addEventListener('click', async () => {
+            startBtn.innerText = "Conectando Câmera...";
+            console.log("Solicitando permissão da câmera...");
+            
+            try {
+                // Tenta forçar a chamada da câmera nativamente primeiro para pegar o erro real
+                await navigator.mediaDevices.getUserMedia({ video: true });
+                
+                const camera = new Camera(videoElement, {
+                    onFrame: async () => { await pose.send({image: videoElement}); },
+                    width: 640,
+                    height: 480,
+                    facingMode: "user" // Força câmera frontal
+                });
 
-            const camera = new Camera(videoElement, {
-                onFrame: async () => {
-                    await pose.send({image: videoElement});
-                },
-                width: 640,
-                height: 480
-            });
+                camera.start().then(() => {
+                    console.log("Câmera iniciada com sucesso!");
+                    startBtn.style.display = 'none';
+                    statusText.innerText = "Processando IA...";
+                    statusText.style.color = "#f59e0b"; // Amarelo
+                }).catch(err => {
+                    console.error("Erro interno CameraUtils: " + err);
+                });
 
-            camera.start().then(() => {
-                startBtn.style.display = 'none';
-            });
+            } catch (error) {
+                console.error("FALHA CRÍTICA NA CÂMERA:");
+                console.error(error.name + ": " + error.message);
+                if(error.name === "NotAllowedError" || error.name === "SecurityError") {
+                    console.error("DICA: O navegador bloqueou. Você precisa rodar isso em HTTPS (CodePen/JSFiddle).");
+                }
+                startBtn.innerText = "Erro. Veja o log.";
+                startBtn.style.background = "#ef4444";
+            }
         });
     </script>
 </body>
