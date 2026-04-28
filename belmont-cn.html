@@ -12,7 +12,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen p-8">
 
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-5xl mx-auto">
         <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <div class="p-3 bg-blue-100 text-blue-700 rounded-lg">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -54,8 +54,10 @@
                 <table class="min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-50">
                         <tr>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-2/3">Nome do Cliente</th>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-1/3">Telefone(s)</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nome do Cliente</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nº Venda</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Data Venda</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Telefone(s)</th>
                         </tr>
                     </thead>
                     <tbody id="results_body" class="bg-white divide-y divide-slate-100">
@@ -139,27 +141,20 @@
             return fullText;
         }
 
-        // --- FUNÇÃO PARA APLICAR MÁSCARA BRASILEIRA MELHORADA ---
         function formatPhoneNumber(rawPhoneString) {
-            // Remove tudo que não for dígito
             const numbers = rawPhoneString.replace(/\D/g, '');
-            
-            // Se for um número menor que 8 dígitos, ignora (provavelmente não é telefone)
             if (numbers.length < 8) return null;
-
-            // Pega os últimos dígitos caso o PDF tenha lixo no começo (ex: 5583...)
             const digits = numbers.length > 11 ? numbers.slice(-11) : numbers;
 
             if (digits.length === 11) {
-                return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`; // (XX) XXXXX-XXXX
+                return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`; 
             } else if (digits.length === 10) {
-                return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6,10)}`;  // (XX) XXXX-XXXX
+                return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6,10)}`; 
             } else if (digits.length === 9) {
-                return `${digits.slice(0,5)}-${digits.slice(5,9)}`; // XXXXX-XXXX (Celular sem DDD)
+                return `${digits.slice(0,5)}-${digits.slice(5,9)}`;
             } else if (digits.length === 8) {
-                return `${digits.slice(0,4)}-${digits.slice(4,8)}`; // XXXX-XXXX (Fixo sem DDD)
+                return `${digits.slice(0,4)}-${digits.slice(4,8)}`;
             }
-            
             return null;
         }
 
@@ -168,31 +163,40 @@
             const clients = [];
 
             blocks.forEach(block => {
-                // Nome do cliente até o primeiro parêntese
+                // Nome do cliente
                 const nameMatch = block.match(/^(.+?)\s*\(/);
                 const name = nameMatch ? nameMatch[1].trim() : 'Nome não identificado';
 
+                // Número do Pedido (Nº VENDA ou NO VENDA)
+                const orderMatch = block.match(/(?:Nº|N°|NO|N)\s*VENDA:\s*([\d\.]+)/i);
+                const orderNumber = orderMatch ? orderMatch[1].trim() : '-';
+
+                // Data da Venda
+                const dateMatch = block.match(/DATA\s*VENDA:\s*([\d]{2}\/[\d]{2}\/[\d]{2,4})/i);
+                const orderDate = dateMatch ? dateMatch[1].trim() : '-';
+
                 let phonesList = [];
 
-                // Captura do Tel.: até "Fone Móvel" ou "Roteiro"
+                // Telefone Fixo
                 const telMatch = block.match(/Tel\.:\s*(.*?)(?=Fone Móvel:|Roteiro:|$)/);
                 if (telMatch) {
                     const formatted = formatPhoneNumber(telMatch[1]);
                     if (formatted) phonesList.push(formatted);
                 }
 
-                // Captura do Fone Móvel até "Roteiro"
+                // Fone Móvel
                 const mobMatch = block.match(/Fone Móvel:\s*(.*?)(?=Roteiro:|$)/);
                 if (mobMatch) {
                     const formatted = formatPhoneNumber(mobMatch[1]);
                     if (formatted) phonesList.push(formatted);
                 }
 
-                // Para remover possíveis duplicatas, caso o Tel e Fone Móvel sejam iguais
                 phonesList = [...new Set(phonesList)];
 
                 clients.push({ 
                     name, 
+                    orderNumber,
+                    orderDate,
                     phones: phonesList.length > 0 ? phonesList : ['Sem telefone']
                 });
             });
@@ -214,21 +218,25 @@
 
                 tr.innerHTML = `
                     <td class="px-6 py-4 text-sm font-semibold text-slate-800">${client.name}</td>
-                    <td class="px-6 py-4 text-sm text-slate-600">${phoneHtml}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-slate-600">${client.orderNumber}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-slate-600">${client.orderDate}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 flex flex-wrap gap-1">${phoneHtml}</td>
                 `;
                 resultsBody.appendChild(tr);
             });
         }
 
         function downloadCSV(data) {
-            const csvRows = ['Cliente,Telefone(s)'];
+            const csvRows = ['Cliente,Nº Venda,Data Venda,Telefone(s)'];
             
             data.forEach(row => {
                 const name = `"${row.name.replace(/"/g, '""')}"`;
+                const orderNum = `"${row.orderNumber}"`;
+                const orderDate = `"${row.orderDate}"`;
                 const phonesStr = row.phones.join(' / ');
                 const phone = `"${phonesStr}"`;
                 
-                csvRows.push(`${name},${phone}`);
+                csvRows.push(`${name},${orderNum},${orderDate},${phone}`);
             });
 
             const csvString = '\uFEFF' + csvRows.join('\n');
