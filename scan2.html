@@ -2,273 +2,254 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SCM SCAN - Volumetria Digital</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        
-        :root { --bg: #050505; --card: #111111; --border: #222222; --primary: #00f2ff; }
-        
-        body { 
-            margin: 0; font-family: 'Inter', sans-serif; 
-            background-color: var(--bg); color: #fff; 
-            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-        }
-
-        .top-bar {
-            padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--border);
-            display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 100;
-        }
-        .brand { font-weight: 900; font-size: 16px; color: var(--primary); letter-spacing: 1px; text-transform: uppercase;}
-        .input-group { display: flex; align-items: center; background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; }
-        .input-group label { font-size: 10px; font-weight: 900; color: #666; margin-right: 8px; }
-        .input-group input { background: transparent; border: none; color: #fff; font-size: 14px; font-weight: 700; outline: none; width: 60px; text-align: center;}
-        
-        button {
-            background: var(--primary); color: #000; border: none; padding: 8px 16px;
-            border-radius: 6px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 12px; margin-left: auto;
-        }
-
-        .workspace { display: flex; flex: 1; overflow: hidden; }
-        @media (max-width: 1000px) { .workspace { flex-direction: column; overflow-y: auto; } }
-
-        .panel { border-right: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
-        .panel:last-child { border-right: none; }
-        .panel-header {
-            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8);
-            padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 900;
-            color: var(--primary); border: 1px solid var(--border); z-index: 20; text-transform: uppercase;
-        }
-
-        .cam-panel { flex: 0.3; background: #000; }
-        video { display: none; }
-        #arCanvas { width: 100%; height: 100%; object-fit: cover; }
-
-        .topo-panel { flex: 0.4; background: #000; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .bed-container {
-            width: 100%; max-width: 420px; height: 95%; background: #050505; border: 2px solid #333;
-            border-radius: 20px; position: relative; box-shadow: 0 0 50px rgba(0,242,255,0.1) inset; overflow: hidden;
-        }
-        #heatmapCanvas { width: 100%; height: 100%; }
-
-        .dash-panel { flex: 0.3; background: var(--card); padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;}
-        .match-box { background: linear-gradient(135deg, #1a1a1a 0%, #050505 100%); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
-        .match-box h1 { margin: 5px 0; font-size: 18px; color: var(--primary); }
-        .chart-box { flex: 1; background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 15px; min-height: 220px;}
-    </style>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lojas Belmont - Extrator de Entregas</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen p-8">
 
-    <div class="top-bar">
-        <div class="brand">SCM SCAN</div>
-        <div class="input-group"><label>PESO (KG)</label><input type="number" id="peso" value="80"></div>
-        <div class="input-group"><label>ALT (CM)</label><input type="number" id="altura" value="175"></div>
-        <button id="startBtn">INICIAR ESCANEAMENTO</button>
-    </div>
-
-    <div class="workspace">
-        <div class="panel cam-panel">
-            <div class="panel-header">1. Digitalização</div>
-            <video id="videoElement" autoplay playsinline></video>
-            <canvas id="arCanvas"></canvas>
-        </div>
-
-        <div class="panel topo-panel">
-            <div class="panel-header" style="color: #ffa502; border-color: #ffa502;">2. Mapa Volumétrico de Pressão</div>
-            <div class="bed-container"><canvas id="heatmapCanvas"></canvas></div>
-        </div>
-
-        <div class="panel dash-panel">
-            <div class="panel-header" style="color: #2ed573; border-color: #2ed573; position: static;">3. Match de Conforto</div>
-            <div class="match-box">
-                <h3 style="font-size: 10px; color: #888; margin:0">MODELO IDEAL</h3>
-                <h1 id="recName">Aguardando...</h1>
-                <p id="recDesc" style="font-size: 12px; color: #aaa;">O algoritmo está pronto para processar sua biometria.</p>
+    <div class="max-w-6xl mx-auto">
+        <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div class="p-3 bg-blue-100 text-blue-700 rounded-lg shadow-inner">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
             </div>
-            <div class="chart-box"><canvas id="pressureChart"></canvas></div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Lojas Belmont</h1>
+                <p class="text-sm text-slate-500 font-medium">Extrator de Clientes, Datas e Telefones</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+            <label class="block text-sm font-semibold text-slate-700 mb-3" for="pdf_upload">
+                Anexe o arquivo PDF de Entregas/Montagem
+            </label>
+            <input 
+                class="block w-full text-sm text-slate-700 border border-slate-300 rounded-lg cursor-pointer bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all" 
+                id="pdf_upload" 
+                type="file" 
+                accept="application/pdf">
+            
+            <div class="mt-6 flex gap-3">
+                <button id="process_btn" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors hidden shadow-md">
+                    Processar Documento
+                </button>
+                <button id="export_btn" class="px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors hidden shadow-md flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Exportar CSV
+                </button>
+            </div>
+            <p id="status_msg" class="mt-3 text-sm text-slate-500 hidden animate-pulse font-medium italic">Lendo dados do PDF, aguarde...</p>
+        </div>
+
+        <div id="results_container" class="bg-white rounded-xl shadow-sm border border-slate-200 hidden overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nº Pedido</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Data Venda</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Data Entrega</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Telefones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results_body" class="bg-white divide-y divide-slate-100 text-sm">
+                        </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        const video = document.getElementById('videoElement');
-        const arCanvas = document.getElementById('arCanvas');
-        const arCtx = arCanvas.getContext('2d');
-        const heatCanvas = document.getElementById('heatmapCanvas');
-        const heatCtx = heatCanvas.getContext('2d');
+        const fileInput = document.getElementById('pdf_upload');
+        const processBtn = document.getElementById('process_btn');
+        const exportBtn = document.getElementById('export_btn');
+        const statusMsg = document.getElementById('status_msg');
+        const resultsContainer = document.getElementById('results_container');
+        const resultsBody = document.getElementById('results_body');
         
-        let isRunning = false;
-        let mesh = [];
-        const gridRes = { cols: 28, rows: 50 };
+        let globalExtractedData = [];
 
-        const pressureChart = new Chart(document.getElementById('pressureChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: ['Cabeça', 'Tronco', 'Braços', 'Quadril', 'Pernas'],
-                datasets: [{ label: 'Pressão Real', data: [0, 0, 0, 0, 0], backgroundColor: '#00f2ff', borderRadius: 4 }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, max: 60, grid: { color: '#222' } } },
-                plugins: { legend: { display: false } }
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                processBtn.classList.remove('hidden');
+                exportBtn.classList.add('hidden');
+                resultsContainer.classList.add('hidden');
             }
         });
 
-        function distToSegment(p, v, w) {
-            var l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
-            if (l2 == 0) return Math.sqrt(Math.pow(p.x - v.x, 2) + Math.pow(p.y - v.y, 2));
-            var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-            t = Math.max(0, Math.min(1, t));
-            return Math.sqrt(Math.pow(p.x - (v.x + t * (w.x - v.x)), 2) + Math.pow(p.y - (v.y + t * (w.y - v.y)), 2));
-        }
+        processBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
 
-        function initMesh() {
-            mesh = [];
-            const w = heatCanvas.width; const h = heatCanvas.height;
-            for (let y = 0; y <= gridRes.rows; y++) {
-                for (let x = 0; x <= gridRes.cols; x++) {
-                    mesh.push({ x: (x/gridRes.cols)*w, y: (y/gridRes.rows)*h, ox: (x/gridRes.cols)*w, oy: (y/gridRes.rows)*h, p: 0 });
+            statusMsg.classList.remove('hidden');
+            statusMsg.textContent = "Lendo PDF e extraindo dados, aguarde...";
+            statusMsg.classList.remove('text-red-500');
+            processBtn.disabled = true;
+            processBtn.classList.add('opacity-50');
+            resultsBody.innerHTML = '';
+            exportBtn.classList.add('hidden');
+
+            try {
+                const text = await extractTextFromPDF(file);
+                globalExtractedData = parseClientsData(text);
+                renderTable(globalExtractedData);
+                
+                if(globalExtractedData.length > 0) {
+                    exportBtn.classList.remove('hidden');
+                } else {
+                    statusMsg.textContent = "Nenhum dado encontrado.";
+                    statusMsg.classList.remove('hidden');
                 }
+            } catch (error) {
+                console.error(error);
+                statusMsg.textContent = "Erro ao processar o arquivo.";
+                statusMsg.classList.add('text-red-500');
+            } finally {
+                if(!statusMsg.classList.contains('text-red-500')) statusMsg.classList.add('hidden');
+                processBtn.disabled = false;
+                processBtn.classList.remove('opacity-50');
             }
-        }
+        });
 
-        function updateMatch(peso, imc, pressMax) {
-            const nameEl = document.getElementById('recName');
-            const descEl = document.getElementById('recDesc');
-
-            if (peso > 100 || imc > 31) { 
-                nameEl.innerText = "Ecoflex Resistive"; 
-                nameEl.style.color = "#ff4757"; 
-                descEl.innerText = "Suporte de alta performance para biotipos acima de 100kg. Garante a durabilidade e o alinhamento da coluna."; 
-            } else if (imc >= 24) { 
-                nameEl.innerText = "Ecoflex Lush"; 
-                nameEl.style.color = "#ffa502"; 
-                descEl.innerText = "Conforto intermediário premium. Ideal para quem busca suporte anatômico com toque macio."; 
-            } else { 
-                nameEl.innerText = "Ecoflex Alva"; 
-                nameEl.style.color = "#2ed573"; 
-                descEl.innerText = "Máxima maciez para biotipos leves. Alívio total de pressão nas articulações."; 
-            }
-        }
-
-        function onResults(results) {
-            if (arCanvas.width !== video.videoWidth) {
-                arCanvas.width = video.videoWidth; arCanvas.height = video.videoHeight;
-                heatCanvas.width = heatCanvas.offsetWidth; heatCanvas.height = heatCanvas.offsetHeight;
-                initMesh();
-            }
-
-            arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
-            arCtx.fillStyle = "rgba(0,0,0,0.6)"; arCtx.fillRect(0,0,arCanvas.width, arCanvas.height);
-
-            const hw = heatCanvas.width; const hh = heatCanvas.height;
-            const peso = parseFloat(document.getElementById('peso').value) || 80;
-            const altura = parseFloat(document.getElementById('altura').value) || 175;
-            let pData = [0, 0, 0, 0, 0];
-            let pressMaxGlobal = 0;
-
-            // Elasticidade
-            mesh.forEach(m => { m.p = 0; m.x += (m.ox - m.x) * 0.12; m.y += (m.oy - m.y) * 0.12; });
-
-            if (results.poseLandmarks) {
-                const lm = results.poseLandmarks;
-                drawConnectors(arCtx, lm, POSE_CONNECTIONS, {color: '#00f2ff', lineWidth: 1});
-
-                // SEGMENTOS COM VOLUMETRIA (r maior no tronco para preencher o corpo)
-                const segments = [
-                    {a: 11, b: 12, w: 0.20, r: 80, id: 1}, // Ombros (Largo)
-                    {a: 11, b: 23, w: 0.25, r: 90, id: 1}, // Tronco Lateral (Muito Largo)
-                    {a: 12, b: 24, w: 0.25, r: 90, id: 1}, // Tronco Lateral (Muito Largo)
-                    {a: 23, b: 24, w: 0.30, r: 100, id: 3}, // Quadril/Pelve (Volumoso)
-                    {a: 23, b: 25, w: 0.10, r: 55, id: 4}, // Coxa Esq
-                    {a: 24, b: 26, w: 0.10, r: 55, id: 4}, // Coxa Dir
-                    {a: 25, b: 27, w: 0.08, r: 45, id: 4}, // Canela Esq
-                    {a: 26, b: 28, w: 0.08, r: 45, id: 4}, // Canela Dir
-                    {a: 11, b: 13, w: 0.06, r: 40, id: 2}, // Braço Esq
-                    {a: 12, b: 14, w: 0.06, r: 40, id: 2}, // Braço Dir
-                    {a: 13, b: 15, w: 0.04, r: 35, id: 2}, // Antebraço
-                    {a: 14, b: 16, w: 0.04, r: 35, id: 2}
-                ];
-
-                segments.forEach(seg => {
-                    const v = {x: lm[seg.a].x * hw, y: lm[seg.b].y > 0 ? lm[seg.a].x * hw : lm[seg.a].x * hw, x: lm[seg.a].x * hw, y: lm[seg.a].y * hh};
-                    const w = {x: lm[seg.b].x * hw, y: lm[seg.b].y * hh};
-                    
-                    mesh.forEach(m => {
-                        const d = distToSegment(m, v, w);
-                        if (d < seg.r) {
-                            // Suavização Gaussiana para parecer um corpo e não um tubo
-                            const falloff = Math.pow(1 - d/seg.r, 2); 
-                            const baseForce = 3.5; // Força mínima para aparecer braços/pernas
-                            const intensity = baseForce + falloff * (peso * seg.w * 0.4);
-                            
-                            m.p += intensity;
-                            m.y += intensity * 0.15; // Deforma para baixo
-                            pData[seg.id] += intensity * 0.03;
-                        }
-                    });
-                });
-
-                // Cabeça (Volumétrica)
-                const head = {x: lm[0].x * hw, y: lm[0].y * hh};
-                mesh.forEach(m => {
-                    const d = Math.sqrt((m.x-head.x)**2 + (m.y-head.y)**2);
-                    if(d < 60) { 
-                        const intensity = 4 + Math.pow(1 - d/60, 2) * 12;
-                        m.p += intensity; m.y += intensity * 0.1; pData[0] += 1;
-                    }
-                });
-            }
-
-            // Renderizar Malha (O Segredo do Visual de Tecido)
-            heatCtx.clearRect(0,0,hw,hh);
-            for(let y=0; y<=gridRes.rows; y++){
-                for(let x=0; x<=gridRes.cols; x++){
-                    const i = y * (gridRes.cols + 1) + x;
-                    const m = mesh[i];
-                    const pr = Math.min(m.p / 30, 1);
-                    const hue = 195 - (pr * 195);
-                    heatCtx.strokeStyle = `hsla(${hue}, 100%, 50%, ${0.15 + pr * 0.7})`;
-                    heatCtx.lineWidth = 0.7 + pr * 1.5;
-
-                    if(x < gridRes.cols){
-                        heatCtx.beginPath(); heatCtx.moveTo(m.x, m.y); 
-                        heatCtx.lineTo(mesh[i+1].x, mesh[i+1].y); heatCtx.stroke();
-                    }
-                    if(y < gridRes.rows){
-                        heatCtx.beginPath(); heatCtx.moveTo(m.x, m.y); 
-                        heatCtx.lineTo(mesh[i + gridRes.cols + 1].x, mesh[i + gridRes.cols + 1].y); heatCtx.stroke();
-                    }
-                    if (m.p > pressMaxGlobal) pressMaxGlobal = m.p;
-                }
-            }
-
-            pressureChart.data.datasets[0].data = pData;
-            pressureChart.data.datasets[0].backgroundColor = pData.map(v => v > 40 ? '#ff4757' : (v > 18 ? '#ffa502' : '#00f2ff'));
-            pressureChart.update();
+        async function extractTextFromPDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+            let fullText = '';
             
-            const imc = peso / ((altura/100)**2);
-            updateMatch(peso, imc, pressMaxGlobal);
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + ' ';
+            }
+            return fullText;
         }
 
-        const pose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
-        pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5 });
-        pose.onResults(onResults);
+        function formatPhoneNumber(rawPhoneString) {
+            const numbers = rawPhoneString.replace(/\D/g, '');
+            if (numbers.length < 8) return null;
+            const digits = numbers.length > 11 ? numbers.slice(-11) : numbers;
 
-        document.getElementById('startBtn').addEventListener('click', async (e) => {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-            video.srcObject = stream;
-            isRunning = true;
-            video.onloadeddata = () => {
-                const detect = async () => { if(isRunning) await pose.send({image: video}); requestAnimationFrame(detect); };
-                detect();
-            };
-            e.target.innerText = "SENSOR ATIVO";
-            e.target.style.background = "#2ed573";
-        });
+            if (digits.length === 11) return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`; 
+            if (digits.length === 10) return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6,10)}`; 
+            if (digits.length === 9) return `${digits.slice(0,5)}-${digits.slice(5,9)}`;
+            if (digits.length === 8) return `${digits.slice(0,4)}-${digits.slice(4,8)}`;
+            return null;
+        }
+
+        function parseClientsData(text) {
+            const blocks = text.split(/CLIENTE:\s*/).slice(1);
+            const clients = [];
+
+            blocks.forEach(block => {
+                // NOME
+                const nameMatch = block.match(/^(.+?)\s*\(/);
+                const name = nameMatch ? nameMatch[1].trim() : 'Não Identificado';
+
+                // Nº VENDA
+                const orderMatch = block.match(/(?:N[º°O]|N)\s*VENDA:\s*([\d\.]+)/i);
+                const orderNumber = orderMatch ? orderMatch[1].trim() : '-';
+
+                // DATA DA VENDA (Pedido)
+                const saleDateMatch = block.match(/DATA\s*VENDA:\s*(\d{2}\/\d{2}\/\d{2,4})/i);
+                const orderDate = saleDateMatch ? saleDateMatch[1].trim() : '-';
+
+                // DATA DE ENTREGA (Real ou Previsão)
+                let deliveryDate = '-';
+                const matchReal = block.match(/DATA\s*ENTREGA:\s*(\d{2}\/\d{2}\/\d{2,4})/i);
+                const matchPrev = block.match(/(?:DATA\s*)?PREVIS[AÃ]O\s*DE\s*ENTREGA:\s*(\d{2}\/\d{2}\/\d{2,4})/i);
+
+                if (matchReal) {
+                    deliveryDate = matchReal[1];
+                } else if (matchPrev) {
+                    deliveryDate = matchPrev[1] + ' (Prev.)';
+                }
+
+                // TELEFONES
+                let phonesList = [];
+                const contactArea = block.split(/Roteiro:|DADOS DA VENDA/i)[0];
+                
+                const telRegex = /Tel\.?\s*:\s*([\d\s\.\-]+)/i;
+                const mobRegex = /Fone\s*M[oó]vel\s*:\s*([\d\s\.\-]+)/i;
+
+                const matchTel = contactArea.match(telRegex);
+                if (matchTel) {
+                    const formatted = formatPhoneNumber(matchTel[1]);
+                    if (formatted) phonesList.push(formatted);
+                }
+
+                const matchMob = contactArea.match(mobRegex);
+                if (matchMob) {
+                    const formatted = formatPhoneNumber(matchMob[1]);
+                    if (formatted) phonesList.push(formatted);
+                }
+
+                phonesList = [...new Set(phonesList)];
+
+                clients.push({ 
+                    name, 
+                    orderNumber,
+                    orderDate,
+                    deliveryDate,
+                    phones: phonesList.length > 0 ? phonesList : ['Sem telefone']
+                });
+            });
+
+            return clients;
+        }
+
+        function renderTable(data) {
+            resultsContainer.classList.remove('hidden');
+            data.forEach(client => {
+                const tr = document.createElement('tr');
+                
+                const phoneHtml = client.phones.map(phone => {
+                    if (phone === 'Sem telefone') return `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-100 text-red-600 uppercase">Sem fone</span>`;
+                    return `<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">${phone}</span>`;
+                }).join(' ');
+
+                let dateStyle = client.deliveryDate.includes('Prev') ? 'text-orange-600 font-medium' : 'text-slate-700 font-bold';
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-bold text-slate-900">${client.name}</td>
+                    <td class="px-6 py-4 text-slate-500 font-mono">${client.orderNumber}</td>
+                    <td class="px-6 py-4 text-slate-600 font-medium">${client.orderDate}</td>
+                    <td class="px-6 py-4 ${dateStyle}">${client.deliveryDate}</td>
+                    <td class="px-6 py-4 flex flex-wrap gap-2">${phoneHtml}</td>
+                `;
+                resultsBody.appendChild(tr);
+            });
+        }
+
+        function downloadCSV(data) {
+            const csvRows = ['Cliente,Pedido,Data Venda,Data Entrega,Telefones'];
+            data.forEach(row => {
+                const name = `"${row.name}"`;
+                const order = `"${row.orderNumber}"`;
+                const orderDate = `"${row.orderDate}"`;
+                const deliveryClean = row.deliveryDate.replace(' (Prev.)', '');
+                const deliveryDate = `"${deliveryClean}"`;
+                const phones = `"${row.phones.join(' / ')}"`;
+                csvRows.push(`${name},${order},${orderDate},${deliveryDate},${phones}`);
+            });
+
+            const csvString = '\uFEFF' + csvRows.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            const today = new Date().toISOString().split('T')[0];
+            link.setAttribute('download', `belmont_entregas_${today}.csv`);
+            link.click();
+        }
     </script>
 </body>
 </html>
