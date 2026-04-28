@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lojas Belmont - Extrator de Entregas</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <div class="flex items-center gap-4 mb-8 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div class="p-3 bg-blue-100 text-blue-700 rounded-lg">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Lojas Belmont</h1>
+                <p class="text-sm text-slate-500 font-medium">Extrator de Clientes para Roteiro de Entrega</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+            <label class="block text-sm font-semibold text-slate-700 mb-3" for="pdf_upload">
+                Anexe o arquivo PDF de Entregas/Montagem
+            </label>
+            <input 
+                class="block w-full text-sm text-slate-700 border border-slate-300 rounded-lg cursor-pointer bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all" 
+                id="pdf_upload" 
+                type="file" 
+                accept="application/pdf">
+            
+            <div class="mt-6 flex gap-3">
+                <button id="process_btn" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors hidden shadow-sm">
+                    Processar Documento
+                </button>
+                <button id="export_btn" class="px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors hidden shadow-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Exportar CSV
+                </button>
+            </div>
+            <p id="status_msg" class="mt-3 text-sm text-slate-500 hidden animate-pulse font-medium">Lendo PDF e extraindo dados, aguarde...</p>
+        </div>
+
+        <div id="results_container" class="bg-white rounded-xl shadow-sm border border-slate-200 hidden overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-2/3">Nome do Cliente</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-1/3">Telefone(s)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results_body" class="bg-white divide-y divide-slate-100">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('pdf_upload');
+        const processBtn = document.getElementById('process_btn');
+        const exportBtn = document.getElementById('export_btn');
+        const statusMsg = document.getElementById('status_msg');
+        const resultsContainer = document.getElementById('results_container');
+        const resultsBody = document.getElementById('results_body');
+        
+        let globalExtractedData = [];
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                processBtn.classList.remove('hidden');
+                exportBtn.classList.add('hidden');
+                resultsContainer.classList.add('hidden');
+            }
+        });
+
+        processBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            statusMsg.classList.remove('hidden');
+            statusMsg.textContent = "Lendo PDF e extraindo dados, aguarde...";
+            statusMsg.classList.remove('text-red-500');
+            processBtn.disabled = true;
+            processBtn.classList.add('opacity-50');
+            resultsBody.innerHTML = '';
+            exportBtn.classList.add('hidden');
+
+            try {
+                const text = await extractTextFromPDF(file);
+                globalExtractedData = parseClientsData(text);
+                renderTable(globalExtractedData);
+                
+                if(globalExtractedData.length > 0) {
+                    exportBtn.classList.remove('hidden');
+                } else {
+                    statusMsg.textContent = "Nenhum cliente encontrado no documento.";
+                    statusMsg.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error(error);
+                statusMsg.textContent = "Erro ao processar o PDF. Verifique o arquivo.";
+                statusMsg.classList.add('text-red-500');
+                statusMsg.classList.remove('hidden');
+            } finally {
+                if(!statusMsg.classList.contains('text-red-500') && globalExtractedData.length > 0) {
+                    statusMsg.classList.add('hidden');
+                }
+                processBtn.disabled = false;
+                processBtn.classList.remove('opacity-50');
+            }
+        });
+
+        exportBtn.addEventListener('click', () => {
+            if (globalExtractedData.length === 0) return;
+            downloadCSV(globalExtractedData);
+        });
+
+        async function extractTextFromPDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+            let fullText = '';
+            
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + ' ';
+            }
+            return fullText;
+        }
+
+        // --- FUNÇÃO PARA APLICAR MÁSCARA BRASILEIRA MELHORADA ---
+        function formatPhoneNumber(rawPhoneString) {
+            // Remove tudo que não for dígito
+            const numbers = rawPhoneString.replace(/\D/g, '');
+            
+            // Se for um número menor que 8 dígitos, ignora (provavelmente não é telefone)
+            if (numbers.length < 8) return null;
+
+            // Pega os últimos dígitos caso o PDF tenha lixo no começo (ex: 5583...)
+            const digits = numbers.length > 11 ? numbers.slice(-11) : numbers;
+
+            if (digits.length === 11) {
+                return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`; // (XX) XXXXX-XXXX
+            } else if (digits.length === 10) {
+                return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6,10)}`;  // (XX) XXXX-XXXX
+            } else if (digits.length === 9) {
+                return `${digits.slice(0,5)}-${digits.slice(5,9)}`; // XXXXX-XXXX (Celular sem DDD)
+            } else if (digits.length === 8) {
+                return `${digits.slice(0,4)}-${digits.slice(4,8)}`; // XXXX-XXXX (Fixo sem DDD)
+            }
+            
+            return null;
+        }
+
+        function parseClientsData(text) {
+            const blocks = text.split(/CLIENTE:\s*/).slice(1);
+            const clients = [];
+
+            blocks.forEach(block => {
+                // Nome do cliente até o primeiro parêntese
+                const nameMatch = block.match(/^(.+?)\s*\(/);
+                const name = nameMatch ? nameMatch[1].trim() : 'Nome não identificado';
+
+                let phonesList = [];
+
+                // Captura do Tel.: até "Fone Móvel" ou "Roteiro"
+                const telMatch = block.match(/Tel\.:\s*(.*?)(?=Fone Móvel:|Roteiro:|$)/);
+                if (telMatch) {
+                    const formatted = formatPhoneNumber(telMatch[1]);
+                    if (formatted) phonesList.push(formatted);
+                }
+
+                // Captura do Fone Móvel até "Roteiro"
+                const mobMatch = block.match(/Fone Móvel:\s*(.*?)(?=Roteiro:|$)/);
+                if (mobMatch) {
+                    const formatted = formatPhoneNumber(mobMatch[1]);
+                    if (formatted) phonesList.push(formatted);
+                }
+
+                // Para remover possíveis duplicatas, caso o Tel e Fone Móvel sejam iguais
+                phonesList = [...new Set(phonesList)];
+
+                clients.push({ 
+                    name, 
+                    phones: phonesList.length > 0 ? phonesList : ['Sem telefone']
+                });
+            });
+
+            return clients;
+        }
+
+        function renderTable(data) {
+            resultsContainer.classList.remove('hidden');
+            data.forEach(client => {
+                const tr = document.createElement('tr');
+                
+                const phoneHtml = client.phones.map(phone => {
+                    if (phone === 'Sem telefone') {
+                        return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">Sem telefone</span>`;
+                    }
+                    return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-slate-100 text-slate-800 border border-slate-200 mr-2 shadow-sm">${phone}</span>`;
+                }).join('');
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-800">${client.name}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${phoneHtml}</td>
+                `;
+                resultsBody.appendChild(tr);
+            });
+        }
+
+        function downloadCSV(data) {
+            const csvRows = ['Cliente,Telefone(s)'];
+            
+            data.forEach(row => {
+                const name = `"${row.name.replace(/"/g, '""')}"`;
+                const phonesStr = row.phones.join(' / ');
+                const phone = `"${phonesStr}"`;
+                
+                csvRows.push(`${name},${phone}`);
+            });
+
+            const csvString = '\uFEFF' + csvRows.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            const dateStr = new Date().toISOString().split('T')[0];
+            link.setAttribute('download', `entregas_belmont_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
