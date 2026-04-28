@@ -6,6 +6,7 @@
     <title>Lojas Belmont - Extrator de Entregas</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     </script>
@@ -21,7 +22,7 @@
             </div>
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-slate-900">Lojas Belmont</h1>
-                <p class="text-sm text-slate-500 font-medium">Extrator de Clientes e Datas de Entrega</p>
+                <p class="text-sm text-slate-500 font-medium">Extrator de Clientes para Excel</p>
             </div>
         </div>
 
@@ -39,14 +40,14 @@
                 <button id="process_btn" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors hidden shadow-md">
                     Processar Documento
                 </button>
-                <button id="export_btn" class="px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors hidden shadow-md flex items-center gap-2">
+                <button id="export_btn" class="px-5 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors hidden shadow-md flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    Exportar CSV
+                    Exportar para Excel
                 </button>
             </div>
-            <p id="status_msg" class="mt-3 text-sm text-slate-500 hidden animate-pulse font-medium italic">Lendo dados do PDF, aguarde...</p>
+            <p id="status_msg" class="mt-3 text-sm text-slate-500 hidden animate-pulse font-medium italic">Analisando PDF, por favor aguarde...</p>
         </div>
 
         <div id="results_container" class="bg-white rounded-xl shadow-sm border border-slate-200 hidden overflow-hidden">
@@ -55,7 +56,7 @@
                     <thead class="bg-slate-50">
                         <tr>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nº Pedido</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Pedido</th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Data Entrega</th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Telefones</th>
                         </tr>
@@ -90,8 +91,6 @@
             if (!file) return;
 
             statusMsg.classList.remove('hidden');
-            statusMsg.textContent = "Lendo PDF e extraindo dados, aguarde...";
-            statusMsg.classList.remove('text-red-500');
             processBtn.disabled = true;
             processBtn.classList.add('opacity-50');
             resultsBody.innerHTML = '';
@@ -104,13 +103,10 @@
                 
                 if(globalExtractedData.length > 0) {
                     exportBtn.classList.remove('hidden');
-                } else {
-                    statusMsg.textContent = "Nenhum dado encontrado.";
-                    statusMsg.classList.remove('hidden');
                 }
             } catch (error) {
                 console.error(error);
-                statusMsg.textContent = "Erro ao processar o arquivo.";
+                statusMsg.textContent = "Erro ao ler o arquivo.";
                 statusMsg.classList.add('text-red-500');
             } finally {
                 if(!statusMsg.classList.contains('text-red-500')) statusMsg.classList.add('hidden');
@@ -119,130 +115,101 @@
             }
         });
 
+        exportBtn.addEventListener('click', () => {
+            if (globalExtractedData.length === 0) return;
+            downloadExcel(globalExtractedData);
+        });
+
         async function extractTextFromPDF(file) {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
             let fullText = '';
-            
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += pageText + ' ';
+                fullText += textContent.items.map(item => item.str).join(' ') + ' ';
             }
             return fullText;
         }
 
-        function formatPhoneNumber(rawPhoneString) {
-            const numbers = rawPhoneString.replace(/\D/g, '');
-            if (numbers.length < 8) return null;
-            const digits = numbers.length > 11 ? numbers.slice(-11) : numbers;
-
-            if (digits.length === 11) return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`; 
-            if (digits.length === 10) return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6,10)}`; 
-            if (digits.length === 9) return `${digits.slice(0,5)}-${digits.slice(5,9)}`;
-            if (digits.length === 8) return `${digits.slice(0,4)}-${digits.slice(4,8)}`;
-            return null;
+        function formatPhoneNumber(raw) {
+            const nums = raw.replace(/\D/g, '');
+            if (nums.length < 8) return null;
+            const d = nums.length > 11 ? nums.slice(-11) : nums;
+            if (d.length === 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7,11)}`; 
+            if (d.length === 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6,10)}`; 
+            if (d.length === 9) return `${d.slice(0,5)}-${d.slice(5,9)}`;
+            return `${d.slice(0,4)}-${d.slice(4,8)}`;
         }
 
         function parseClientsData(text) {
             const blocks = text.split(/CLIENTE:\s*/).slice(1);
-            const clients = [];
-
-            blocks.forEach(block => {
+            return blocks.map(block => {
                 const nameMatch = block.match(/^(.+?)\s*\(/);
-                const name = nameMatch ? nameMatch[1].trim() : 'Não Identificado';
-
-                // Captura Nº VENDA
                 const orderMatch = block.match(/(?:N[º°O]|N)\s*VENDA:\s*([\d\.]+)/i);
-                const orderNumber = orderMatch ? orderMatch[1].trim() : '-';
+                const realDate = block.match(/DATA\s*ENTREGA:\s*(\d{2}\/\d{2}\/\d{2,4})/i);
+                const prevDate = block.match(/(?:DATA\s*)?PREVIS[AÃ]O\s*DE\s*ENTREGA:\s*(\d{2}\/\d{2}\/\d{2,4})/i);
 
-                // ==========================================
-                // NOVA LÓGICA DE CAPTURA DA DATA DE ENTREGA
-                // ==========================================
-                let deliveryDate = '-';
-                
-                // 1. Tenta achar a "DATA ENTREGA" exata
-                const matchReal = block.match(/DATA\s*ENTREGA:\s*(\d{2}\/\d{2}\/\d{2,4})/i);
-                // 2. Se não achar, tenta achar "DATA PREVISÃO DE ENTREGA"
-                const matchPrev = block.match(/(?:DATA\s*)?PREVIS[AÃ]O\s*DE\s*ENTREGA:\s*(\d{2}\/\d{2}\/\d{2,4})/i);
-
-                if (matchReal) {
-                    deliveryDate = matchReal[1];
-                } else if (matchPrev) {
-                    // Adiciona a tag (Prev.) para sinalizar que é apenas previsão
-                    deliveryDate = matchPrev[1] + ' (Prev.)';
-                }
-
-                let phonesList = [];
-                // Captura telefones com trava no DADOS DA VENDA para não vazar texto
+                let phones = [];
                 const telMatch = block.match(/Tel\.:\s*(.*?)(?=Fone Móvel:|Roteiro:|DADOS DA VENDA|$)/);
-                if (telMatch) {
-                    const formatted = formatPhoneNumber(telMatch[1]);
-                    if (formatted) phonesList.push(formatted);
-                }
-
                 const mobMatch = block.match(/Fone Móvel:\s*(.*?)(?=Roteiro:|DADOS DA VENDA|$)/);
-                if (mobMatch) {
-                    const formatted = formatPhoneNumber(mobMatch[1]);
-                    if (formatted) phonesList.push(formatted);
-                }
+                
+                if(telMatch) { const f = formatPhoneNumber(telMatch[1]); if(f) phones.push(f); }
+                if(mobMatch) { const f = formatPhoneNumber(mobMatch[1]); if(f) phones.push(f); }
 
-                phonesList = [...new Set(phonesList)];
-
-                clients.push({ 
-                    name, 
-                    orderNumber,
-                    deliveryDate,
-                    phones: phonesList.length > 0 ? phonesList : ['Sem telefone']
-                });
+                return {
+                    name: nameMatch ? nameMatch[1].trim() : 'Não Identificado',
+                    order: orderMatch ? orderMatch[1].trim() : '-',
+                    date: realDate ? realDate[1] : (prevDate ? prevDate[1] + ' (Prev.)' : '-'),
+                    phones: [...new Set(phones)].length > 0 ? [...new Set(phones)] : ['Sem fone']
+                };
             });
-
-            return clients;
         }
 
         function renderTable(data) {
             resultsContainer.classList.remove('hidden');
             data.forEach(client => {
                 const tr = document.createElement('tr');
-                
-                const phoneHtml = client.phones.map(phone => {
-                    if (phone === 'Sem telefone') return `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-100 text-red-600 uppercase">Sem fone</span>`;
-                    return `<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">${phone}</span>`;
-                }).join(' ');
-
-                // Estiliza a data dependendo se é previsão ou definitiva
-                let dateStyle = client.deliveryDate.includes('Prev') ? 'text-orange-600 font-medium' : 'text-slate-700 font-bold';
+                const phoneHtml = client.phones.map(p => 
+                    `<span class="inline-flex px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-100 mr-1 mb-1">${p}</span>`
+                ).join('');
 
                 tr.innerHTML = `
                     <td class="px-6 py-4 font-bold text-slate-900">${client.name}</td>
-                    <td class="px-6 py-4 text-slate-500 font-mono">${client.orderNumber}</td>
-                    <td class="px-6 py-4 ${dateStyle}">${client.deliveryDate}</td>
-                    <td class="px-6 py-4 flex flex-wrap gap-2">${phoneHtml}</td>
+                    <td class="px-6 py-4 text-slate-500">${client.order}</td>
+                    <td class="px-6 py-4 font-semibold text-slate-700">${client.date}</td>
+                    <td class="px-6 py-4 flex flex-wrap">${phoneHtml}</td>
                 `;
                 resultsBody.appendChild(tr);
             });
         }
 
-        function downloadCSV(data) {
-            const csvRows = ['Cliente,Pedido,Data Entrega,Telefones'];
-            data.forEach(row => {
-                const name = `"${row.name}"`;
-                const order = `"${row.orderNumber}"`;
-                // Remove o "(Prev.)" do CSV para ficar limpo para o sistema
-                const dateClean = row.deliveryDate.replace(' (Prev.)', '');
-                const date = `"${dateClean}"`;
-                const phones = `"${row.phones.join(' / ')}"`;
-                csvRows.push(`${name},${order},${date},${phones}`);
-            });
+        function downloadExcel(data) {
+            // Prepara os dados para o SheetJS
+            const worksheetData = data.map(row => ({
+                "Cliente": row.name,
+                "Nº Pedido": row.order,
+                "Data de Entrega": row.date,
+                "Telefones": row.phones.join(' / ')
+            }));
 
-            const csvString = '\uFEFF' + csvRows.join('\n');
-            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            const today = new Date().toISOString().split('T')[0];
-            link.setAttribute('download', `belmont_entregas_${today}.csv`);
-            link.click();
+            // Cria o Workbook e a Worksheet
+            const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Entregas");
+
+            // Ajusta a largura das colunas automaticamente
+            const wscols = [
+                {wch: 40}, // Cliente
+                {wch: 15}, // Pedido
+                {wch: 20}, // Data
+                {wch: 30}  // Telefones
+            ];
+            worksheet['!cols'] = wscols;
+
+            // Gera o download
+            const dateStr = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `belmont_entregas_${dateStr}.xlsx`);
         }
     </script>
 </body>
