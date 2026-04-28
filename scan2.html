@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SCM SCAN - Volumetria Digital</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        
+        :root { --bg: #050505; --card: #111111; --border: #222222; --primary: #00f2ff; }
+        
+        body { 
+            margin: 0; font-family: 'Inter', sans-serif; 
+            background-color: var(--bg); color: #fff; 
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .top-bar {
+            padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--border);
+            display: flex; gap: 15px; align-items: center; flex-wrap: wrap; z-index: 100;
+        }
+        .brand { font-weight: 900; font-size: 16px; color: var(--primary); letter-spacing: 1px; text-transform: uppercase;}
+        .input-group { display: flex; align-items: center; background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; }
+        .input-group label { font-size: 10px; font-weight: 900; color: #666; margin-right: 8px; }
+        .input-group input { background: transparent; border: none; color: #fff; font-size: 14px; font-weight: 700; outline: none; width: 60px; text-align: center;}
+        
+        button {
+            background: var(--primary); color: #000; border: none; padding: 8px 16px;
+            border-radius: 6px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 12px; margin-left: auto;
+        }
+
+        .workspace { display: flex; flex: 1; overflow: hidden; }
+        @media (max-width: 1000px) { .workspace { flex-direction: column; overflow-y: auto; } }
+
+        .panel { border-right: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
+        .panel:last-child { border-right: none; }
+        .panel-header {
+            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8);
+            padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 900;
+            color: var(--primary); border: 1px solid var(--border); z-index: 20; text-transform: uppercase;
+        }
+
+        .cam-panel { flex: 0.3; background: #000; }
+        video { display: none; }
+        #arCanvas { width: 100%; height: 100%; object-fit: cover; }
+
+        .topo-panel { flex: 0.4; background: #000; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .bed-container {
+            width: 100%; max-width: 420px; height: 95%; background: #050505; border: 2px solid #333;
+            border-radius: 20px; position: relative; box-shadow: 0 0 50px rgba(0,242,255,0.1) inset; overflow: hidden;
+        }
+        #heatmapCanvas { width: 100%; height: 100%; }
+
+        .dash-panel { flex: 0.3; background: var(--card); padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;}
+        .match-box { background: linear-gradient(135deg, #1a1a1a 0%, #050505 100%); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
+        .match-box h1 { margin: 5px 0; font-size: 18px; color: var(--primary); }
+        .chart-box { flex: 1; background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 15px; min-height: 220px;}
+    </style>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="brand">SCM SCAN</div>
+        <div class="input-group"><label>PESO (KG)</label><input type="number" id="peso" value="80"></div>
+        <div class="input-group"><label>ALT (CM)</label><input type="number" id="altura" value="175"></div>
+        <button id="startBtn">INICIAR ESCANEAMENTO</button>
+    </div>
+
+    <div class="workspace">
+        <div class="panel cam-panel">
+            <div class="panel-header">1. Digitalização</div>
+            <video id="videoElement" autoplay playsinline></video>
+            <canvas id="arCanvas"></canvas>
+        </div>
+
+        <div class="panel topo-panel">
+            <div class="panel-header" style="color: #ffa502; border-color: #ffa502;">2. Mapa Volumétrico de Pressão</div>
+            <div class="bed-container"><canvas id="heatmapCanvas"></canvas></div>
+        </div>
+
+        <div class="panel dash-panel">
+            <div class="panel-header" style="color: #2ed573; border-color: #2ed573; position: static;">3. Match de Conforto</div>
+            <div class="match-box">
+                <h3 style="font-size: 10px; color: #888; margin:0">MODELO IDEAL</h3>
+                <h1 id="recName">Aguardando...</h1>
+                <p id="recDesc" style="font-size: 12px; color: #aaa;">O algoritmo está pronto para processar sua biometria.</p>
+            </div>
+            <div class="chart-box"><canvas id="pressureChart"></canvas></div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoElement');
+        const arCanvas = document.getElementById('arCanvas');
+        const arCtx = arCanvas.getContext('2d');
+        const heatCanvas = document.getElementById('heatmapCanvas');
+        const heatCtx = heatCanvas.getContext('2d');
+        
+        let isRunning = false;
+        let mesh = [];
+        const gridRes = { cols: 28, rows: 50 };
+
+        const pressureChart = new Chart(document.getElementById('pressureChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Cabeça', 'Tronco', 'Braços', 'Quadril', 'Pernas'],
+                datasets: [{ label: 'Pressão Real', data: [0, 0, 0, 0, 0], backgroundColor: '#00f2ff', borderRadius: 4 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, max: 60, grid: { color: '#222' } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        function distToSegment(p, v, w) {
+            var l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
+            if (l2 == 0) return Math.sqrt(Math.pow(p.x - v.x, 2) + Math.pow(p.y - v.y, 2));
+            var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            return Math.sqrt(Math.pow(p.x - (v.x + t * (w.x - v.x)), 2) + Math.pow(p.y - (v.y + t * (w.y - v.y)), 2));
+        }
+
+        function initMesh() {
+            mesh = [];
+            const w = heatCanvas.width; const h = heatCanvas.height;
+            for (let y = 0; y <= gridRes.rows; y++) {
+                for (let x = 0; x <= gridRes.cols; x++) {
+                    mesh.push({ x: (x/gridRes.cols)*w, y: (y/gridRes.rows)*h, ox: (x/gridRes.cols)*w, oy: (y/gridRes.rows)*h, p: 0 });
+                }
+            }
+        }
+
+        function updateMatch(peso, imc, pressMax) {
+            const nameEl = document.getElementById('recName');
+            const descEl = document.getElementById('recDesc');
+
+            if (peso > 100 || imc > 31) { 
+                nameEl.innerText = "Ecoflex Resistive"; 
+                nameEl.style.color = "#ff4757"; 
+                descEl.innerText = "Suporte de alta performance para biotipos acima de 100kg. Garante a durabilidade e o alinhamento da coluna."; 
+            } else if (imc >= 24) { 
+                nameEl.innerText = "Ecoflex Lush"; 
+                nameEl.style.color = "#ffa502"; 
+                descEl.innerText = "Conforto intermediário premium. Ideal para quem busca suporte anatômico com toque macio."; 
+            } else { 
+                nameEl.innerText = "Ecoflex Alva"; 
+                nameEl.style.color = "#2ed573"; 
+                descEl.innerText = "Máxima maciez para biotipos leves. Alívio total de pressão nas articulações."; 
+            }
+        }
+
+        function onResults(results) {
+            if (arCanvas.width !== video.videoWidth) {
+                arCanvas.width = video.videoWidth; arCanvas.height = video.videoHeight;
+                heatCanvas.width = heatCanvas.offsetWidth; heatCanvas.height = heatCanvas.offsetHeight;
+                initMesh();
+            }
+
+            arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+            arCtx.fillStyle = "rgba(0,0,0,0.6)"; arCtx.fillRect(0,0,arCanvas.width, arCanvas.height);
+
+            const hw = heatCanvas.width; const hh = heatCanvas.height;
+            const peso = parseFloat(document.getElementById('peso').value) || 80;
+            const altura = parseFloat(document.getElementById('altura').value) || 175;
+            let pData = [0, 0, 0, 0, 0];
+            let pressMaxGlobal = 0;
+
+            // Elasticidade
+            mesh.forEach(m => { m.p = 0; m.x += (m.ox - m.x) * 0.12; m.y += (m.oy - m.y) * 0.12; });
+
+            if (results.poseLandmarks) {
+                const lm = results.poseLandmarks;
+                drawConnectors(arCtx, lm, POSE_CONNECTIONS, {color: '#00f2ff', lineWidth: 1});
+
+                // SEGMENTOS COM VOLUMETRIA (r maior no tronco para preencher o corpo)
+                const segments = [
+                    {a: 11, b: 12, w: 0.20, r: 80, id: 1}, // Ombros (Largo)
+                    {a: 11, b: 23, w: 0.25, r: 90, id: 1}, // Tronco Lateral (Muito Largo)
+                    {a: 12, b: 24, w: 0.25, r: 90, id: 1}, // Tronco Lateral (Muito Largo)
+                    {a: 23, b: 24, w: 0.30, r: 100, id: 3}, // Quadril/Pelve (Volumoso)
+                    {a: 23, b: 25, w: 0.10, r: 55, id: 4}, // Coxa Esq
+                    {a: 24, b: 26, w: 0.10, r: 55, id: 4}, // Coxa Dir
+                    {a: 25, b: 27, w: 0.08, r: 45, id: 4}, // Canela Esq
+                    {a: 26, b: 28, w: 0.08, r: 45, id: 4}, // Canela Dir
+                    {a: 11, b: 13, w: 0.06, r: 40, id: 2}, // Braço Esq
+                    {a: 12, b: 14, w: 0.06, r: 40, id: 2}, // Braço Dir
+                    {a: 13, b: 15, w: 0.04, r: 35, id: 2}, // Antebraço
+                    {a: 14, b: 16, w: 0.04, r: 35, id: 2}
+                ];
+
+                segments.forEach(seg => {
+                    const v = {x: lm[seg.a].x * hw, y: lm[seg.b].y > 0 ? lm[seg.a].x * hw : lm[seg.a].x * hw, x: lm[seg.a].x * hw, y: lm[seg.a].y * hh};
+                    const w = {x: lm[seg.b].x * hw, y: lm[seg.b].y * hh};
+                    
+                    mesh.forEach(m => {
+                        const d = distToSegment(m, v, w);
+                        if (d < seg.r) {
+                            // Suavização Gaussiana para parecer um corpo e não um tubo
+                            const falloff = Math.pow(1 - d/seg.r, 2); 
+                            const baseForce = 3.5; // Força mínima para aparecer braços/pernas
+                            const intensity = baseForce + falloff * (peso * seg.w * 0.4);
+                            
+                            m.p += intensity;
+                            m.y += intensity * 0.15; // Deforma para baixo
+                            pData[seg.id] += intensity * 0.03;
+                        }
+                    });
+                });
+
+                // Cabeça (Volumétrica)
+                const head = {x: lm[0].x * hw, y: lm[0].y * hh};
+                mesh.forEach(m => {
+                    const d = Math.sqrt((m.x-head.x)**2 + (m.y-head.y)**2);
+                    if(d < 60) { 
+                        const intensity = 4 + Math.pow(1 - d/60, 2) * 12;
+                        m.p += intensity; m.y += intensity * 0.1; pData[0] += 1;
+                    }
+                });
+            }
+
+            // Renderizar Malha (O Segredo do Visual de Tecido)
+            heatCtx.clearRect(0,0,hw,hh);
+            for(let y=0; y<=gridRes.rows; y++){
+                for(let x=0; x<=gridRes.cols; x++){
+                    const i = y * (gridRes.cols + 1) + x;
+                    const m = mesh[i];
+                    const pr = Math.min(m.p / 30, 1);
+                    const hue = 195 - (pr * 195);
+                    heatCtx.strokeStyle = `hsla(${hue}, 100%, 50%, ${0.15 + pr * 0.7})`;
+                    heatCtx.lineWidth = 0.7 + pr * 1.5;
+
+                    if(x < gridRes.cols){
+                        heatCtx.beginPath(); heatCtx.moveTo(m.x, m.y); 
+                        heatCtx.lineTo(mesh[i+1].x, mesh[i+1].y); heatCtx.stroke();
+                    }
+                    if(y < gridRes.rows){
+                        heatCtx.beginPath(); heatCtx.moveTo(m.x, m.y); 
+                        heatCtx.lineTo(mesh[i + gridRes.cols + 1].x, mesh[i + gridRes.cols + 1].y); heatCtx.stroke();
+                    }
+                    if (m.p > pressMaxGlobal) pressMaxGlobal = m.p;
+                }
+            }
+
+            pressureChart.data.datasets[0].data = pData;
+            pressureChart.data.datasets[0].backgroundColor = pData.map(v => v > 40 ? '#ff4757' : (v > 18 ? '#ffa502' : '#00f2ff'));
+            pressureChart.update();
+            
+            const imc = peso / ((altura/100)**2);
+            updateMatch(peso, imc, pressMaxGlobal);
+        }
+
+        const pose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
+        pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5 });
+        pose.onResults(onResults);
+
+        document.getElementById('startBtn').addEventListener('click', async (e) => {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            video.srcObject = stream;
+            isRunning = true;
+            video.onloadeddata = () => {
+                const detect = async () => { if(isRunning) await pose.send({image: video}); requestAnimationFrame(detect); };
+                detect();
+            };
+            e.target.innerText = "SENSOR ATIVO";
+            e.target.style.background = "#2ed573";
+        });
+    </script>
+</body>
+</html>
