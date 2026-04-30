@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="m-0 p-0">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Planejador Mensal A4 - Preto e Branco</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100%;
+            width: 100%;
+            background-color: white;
+            color: black;
+        }
+
+        /* ----- CONFIGURAÇÕES EXCLUSIVAS DE IMPRESSÃO (A4 Paisagem) ----- */
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: white;
+            }
+            .print-container {
+                width: 297mm !important;
+                height: 210mm !important;
+                max-width: 297mm !important; /* Ignora as restrições de tela no mobile */
+                padding: 10mm; 
+                display: flex;
+                flex-direction: column;
+                page-break-after: always;
+                overflow: hidden;
+                box-shadow: none !important;
+                margin: 0 !important;
+                border: none !important;
+            }
+            /* Garante que o grid expanda na impressão */
+            #main-grid {
+                flex-grow: 1;
+            }
+        }
+
+        /* ----- CONFIGURAÇÕES DE VISUALIZAÇÃO EM TELA (Responsivo) ----- */
+        @media screen {
+            body {
+                background-color: #f3f4f6;
+                padding: 1rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                /* Permite rolagem no celular */
+                overflow-x: hidden; 
+                overflow-y: auto;
+            }
+            
+            /* Controles responsivos */
+            .controls-container {
+                width: 100%;
+                max-width: 800px;
+                flex-wrap: wrap; /* Permite quebrar linha em telas muito pequenas */
+                justify-content: center;
+            }
+
+            /* Container que simula a folha na tela */
+            .print-container {
+                background: white;
+                width: 100%;
+                max-width: 1000px; /* Não força os 297mm na tela para caber no mobile */
+                aspect-ratio: 1.414 / 1; /* Mantém a proporção A4 (297/210) na tela */
+                padding: 3%; /* Padding relativo na tela */
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                margin-bottom: 2rem;
+                display: flex;
+                flex-direction: column;
+                border: 1px solid #e5e7eb;
+                /* Altura mínima para não ficar muito esmagado no mobile */
+                min-height: 400px; 
+            }
+            
+            /* Título responsivo */
+            #planner-title {
+                font-size: clamp(1.5rem, 4vw, 2.25rem);
+            }
+        }
+
+        /* ----- ESTILOS DO GRID E TABELA (Comuns Tela/Impressão) ----- */
+        #main-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            flex-grow: 1;
+            border-top: 2px solid black;
+            border-left: 2px solid black;
+        }
+
+        .day-cell {
+            border-right: 2px solid black;
+            border-bottom: 2px solid black;
+            display: flex;
+            flex-direction: column;
+            padding: 4px 6px;
+            /* Garante que a célula não encolha demais */
+            min-height: 20px; 
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+
+    <!-- Controles -->
+    <div class="no-print controls-container mb-4 flex gap-2 sm:gap-4 bg-white px-4 py-3 rounded-lg border border-gray-300 shadow-sm items-center">
+        <button id="prev" class="px-3 py-2 sm:py-1 hover:bg-gray-100 rounded text-black font-bold text-lg sm:text-xl">&larr;</button>
+        <div id="current-month" class="font-bold text-base sm:text-xl min-w-[140px] sm:min-w-[200px] text-center uppercase tracking-widest truncate"></div>
+        <button id="next" class="px-3 py-2 sm:py-1 hover:bg-gray-100 rounded text-black font-bold text-lg sm:text-xl">&rarr;</button>
+        
+        <div class="hidden sm:block h-6 w-px bg-gray-300 mx-2"></div>
+        
+        <button onclick="window.print()" class="ml-auto sm:ml-0 px-4 sm:px-6 py-2 bg-black hover:bg-gray-800 text-white rounded font-bold uppercase tracking-wider text-sm sm:text-base transition-colors flex-shrink-0">
+            Imprimir
+        </button>
+    </div>
+
+    <!-- Área de Impressão do Planner -->
+    <div class="print-container">
+        <!-- Cabeçalho -->
+        <header class="flex justify-between items-end mb-2 sm:mb-3">
+            <h1 id="planner-title" class="font-black uppercase tracking-tight text-black truncate pr-2"></h1>
+            <span class="text-black font-bold tracking-widest text-[8px] sm:text-xs uppercase border-b-2 border-black pb-1 hidden sm:inline-block">Planejamento Mensal</span>
+            <span class="text-black font-bold tracking-widest text-[8px] uppercase border-b-2 border-black pb-1 sm:hidden">Planner</span>
+        </header>
+
+        <!-- Dias da Semana -->
+        <div class="grid grid-cols-7 gap-0 border-l-2 border-r-2 border-t-2 border-black bg-white">
+            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Dom</div>
+            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Seg</div>
+            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Ter</div>
+            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Qua</div>
+            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Qui</div>
+            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Sex</div>
+            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest">Sáb</div>
+        </div>
+
+        <!-- Grid Principal -->
+        <div id="main-grid"></div>
+    </div>
+
+    <script>
+        const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        let activeDate = new Date();
+
+        function renderCalendar() {
+            const year = activeDate.getFullYear();
+            const month = activeDate.getMonth();
+
+            const monthText = `${monthNames[month]} ${year}`;
+            document.getElementById('current-month').innerText = monthText;
+            document.getElementById('planner-title').innerText = monthText;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+            const grid = document.getElementById('main-grid');
+            grid.innerHTML = '';
+
+            const totalCellsNeeded = firstDayIndex + daysInMonth;
+            const rows = Math.ceil(totalCellsNeeded / 7);
+            grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+            // Dias do Mês Anterior
+            for (let i = 0; i < firstDayIndex; i++) {
+                const prevDay = daysInPrevMonth - firstDayIndex + i + 1;
+                grid.innerHTML += `
+                    <div class="day-cell">
+                        <span class="text-xs sm:text-sm font-semibold text-gray-400 leading-none">${prevDay}</span>
+                    </div>
+                `;
+            }
+
+            // Dias do Mês Atual
+            for (let day = 1; day <= daysInMonth; day++) {
+                grid.innerHTML += `
+                    <div class="day-cell">
+                        <span class="text-base sm:text-xl font-black text-black leading-none">${day}</span>
+                    </div>
+                `;
+            }
+
+            // Dias do Próximo Mês
+            const remaining = (rows * 7) - totalCellsNeeded;
+            for (let i = 1; i <= remaining; i++) {
+                grid.innerHTML += `
+                    <div class="day-cell">
+                        <span class="text-xs sm:text-sm font-semibold text-gray-400 leading-none">${i}</span>
+                    </div>
+                `;
+            }
+        }
+
+        document.getElementById('prev').addEventListener('click', () => {
+            activeDate.setMonth(activeDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        document.getElementById('next').addEventListener('click', () => {
+            activeDate.setMonth(activeDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        renderCalendar();
+    </script>
+</body>
+</html>
