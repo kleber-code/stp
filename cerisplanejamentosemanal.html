@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Planejador Mensal A4 - Preto e Branco</title>
+    <title>Planejador Mensal A4 - Otimizado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * {
@@ -37,8 +37,9 @@
             .print-container {
                 width: 297mm !important;
                 height: 210mm !important;
-                max-width: 297mm !important; /* Ignora as restrições de tela no mobile */
-                padding: 10mm; 
+                max-width: 297mm !important;
+                /* Padding reduzido ao máximo seguro para impressoras (4mm) */
+                padding: 4mm !important; 
                 display: flex;
                 flex-direction: column;
                 page-break-after: always;
@@ -47,7 +48,14 @@
                 margin: 0 !important;
                 border: none !important;
             }
-            /* Garante que o grid expanda na impressão */
+            /* Título ligeiramente menor na impressão para dar espaço ao grid */
+            #planner-title {
+                font-size: 24pt !important;
+                line-height: 1 !important;
+            }
+            header {
+                margin-bottom: 2mm !important;
+            }
             #main-grid {
                 flex-grow: 1;
             }
@@ -61,42 +69,37 @@
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                /* Permite rolagem no celular */
                 overflow-x: hidden; 
                 overflow-y: auto;
             }
             
-            /* Controles responsivos */
             .controls-container {
                 width: 100%;
                 max-width: 800px;
-                flex-wrap: wrap; /* Permite quebrar linha em telas muito pequenas */
+                flex-wrap: wrap; 
                 justify-content: center;
             }
 
-            /* Container que simula a folha na tela */
             .print-container {
                 background: white;
                 width: 100%;
-                max-width: 1000px; /* Não força os 297mm na tela para caber no mobile */
-                aspect-ratio: 1.414 / 1; /* Mantém a proporção A4 (297/210) na tela */
-                padding: 3%; /* Padding relativo na tela */
+                max-width: 1000px; 
+                aspect-ratio: 1.414 / 1; 
+                padding: 2%; 
                 box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
                 margin-bottom: 2rem;
                 display: flex;
                 flex-direction: column;
                 border: 1px solid #e5e7eb;
-                /* Altura mínima para não ficar muito esmagado no mobile */
                 min-height: 400px; 
             }
             
-            /* Título responsivo */
             #planner-title {
-                font-size: clamp(1.5rem, 4vw, 2.25rem);
+                font-size: clamp(1.25rem, 3vw, 2rem);
             }
         }
 
-        /* ----- ESTILOS DO GRID E TABELA (Comuns Tela/Impressão) ----- */
+        /* ----- ESTILOS DO GRID E TABELA ----- */
         #main-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -110,8 +113,8 @@
             border-bottom: 2px solid black;
             display: flex;
             flex-direction: column;
-            padding: 4px 6px;
-            /* Garante que a célula não encolha demais */
+            /* Padding interno da célula bem fininho para sobrar espaço em branco */
+            padding: 2px 4px;
             min-height: 20px; 
         }
     </style>
@@ -133,22 +136,22 @@
 
     <!-- Área de Impressão do Planner -->
     <div class="print-container">
-        <!-- Cabeçalho -->
-        <header class="flex justify-between items-end mb-2 sm:mb-3">
-            <h1 id="planner-title" class="font-black uppercase tracking-tight text-black truncate pr-2"></h1>
-            <span class="text-black font-bold tracking-widest text-[8px] sm:text-xs uppercase border-b-2 border-black pb-1 hidden sm:inline-block">Planejamento Mensal</span>
-            <span class="text-black font-bold tracking-widest text-[8px] uppercase border-b-2 border-black pb-1 sm:hidden">Planner</span>
+        <!-- Cabeçalho (Margem reduzida) -->
+        <header class="flex justify-between items-end mb-1 sm:mb-2">
+            <h1 id="planner-title" class="font-black uppercase tracking-tight text-black truncate pr-2 leading-none"></h1>
+            <span class="text-black font-bold tracking-widest text-[8px] sm:text-xs uppercase border-b-2 border-black pb-0.5 hidden sm:inline-block">Planejamento Mensal</span>
+            <span class="text-black font-bold tracking-widest text-[8px] uppercase border-b-2 border-black pb-0.5 sm:hidden">Planner</span>
         </header>
 
         <!-- Dias da Semana -->
         <div class="grid grid-cols-7 gap-0 border-l-2 border-r-2 border-t-2 border-black bg-white">
-            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Dom</div>
-            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Seg</div>
-            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Ter</div>
-            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Qua</div>
-            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Qui</div>
-            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Sex</div>
-            <div class="py-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest">Sáb</div>
+            <div class="py-0.5 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Dom</div>
+            <div class="py-0.5 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Seg</div>
+            <div class="py-0.5 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Ter</div>
+            <div class="py-0.5 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Qua</div>
+            <div class="py-0.5 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Qui</div>
+            <div class="py-0.5 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest border-r-2 border-black">Sex</div>
+            <div class="py-0.5 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest">Sáb</div>
         </div>
 
         <!-- Grid Principal -->
