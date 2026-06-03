@@ -3,449 +3,304 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cartaz Varejo (Destaque Principal) A4</title>
+    <title>Cartaz Varejo (Folha Amarela) A4 - Atualizado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      /* Define a fonte Inter (negrito máximo) */
-      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap");
+      /* Fonte Inter para ficar com aspecto de varejo (pesado) */
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap");
 
       body {
         font-family: "Inter", sans-serif;
-        background-color: #f0f0f0;
+        background-color: #e5e7eb;
         margin: 0;
         padding: 0;
       }
 
-      /* Oculta o template fora da impressão */
-      #printArea {
-        display: none;
+      /* Oculta o cartaz fora da impressão */
+      #printArea { display: none; }
+
+      /* Modo de pré-visualização (Simulando a folha amarela) */
+      .preview-mode {
+        display: flex !important;
+        width: 210mm;
+        height: 297mm;
+        background-color: #ffde00;
+        margin: 2rem auto;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        overflow: hidden;
+        flex-direction: column;
+        box-sizing: border-box;
       }
 
-      /* Estilo para a label flutuante (opcional, mas melhora a visualização com placeholder) */
-      .input-group label {
-        transition: all 0.2s ease-in-out;
-        pointer-events: none;
-      }
-
+      /* Configurações rigorosas na hora de imprimir de verdade */
       @media print {
         @page {
-          size: A4;
+          size: A4 portrait;
           margin: 0;
         }
 
-        html,
-        body {
+        html, body {
           margin: 0 !important;
           padding: 0 !important;
           width: 100%;
           height: 100%;
+          background-color: #ffffff !important;
         }
 
-        #controlPanel {
-          display: none !important;
-        }
+        #controlPanel { display: none !important; }
 
-        /* Exibe o template apenas na impressão */
+        /* Torna o fundo transparente na impressora para não gastar tinta amarela */
         #printArea {
           display: flex !important;
           width: 210mm;
           height: 297mm;
-          padding: 0 !important;
+          padding: 12mm 15mm !important;
           margin: 0 !important;
-          background-color: #ffffff !important;
+          background-color: transparent !important; 
+          box-shadow: none !important;
           overflow: hidden;
-
           flex-direction: column;
-          justify-content: space-between;
-          align-items: center;
-
+          box-sizing: border-box;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
-
-        /* Classes de espaçamento para imprimir apenas o necessário */
-        .print-spacing-sm {
-          padding: 15px 15px;
-        }
-
-        /* Ajustes de fonte para preencher o A4 */
-        #outputTitulo {
-          font-size: 5em !important;
-          padding: 15px 0 !important;
-        }
-        #outputProduto {
-          font-size: 2.2em !important;
-          margin-bottom: 0.5em !important;
-        }
-
-        /* DESTAQUE DO PREÇO DE */
-        #outputDe {
-          font-size: 2.8em !important;
-        }
-        #outputDe span {
-          font-size: 1.1em !important;
-        }
-
-        /* NOVOS ESTILOS PARA O PREÇO POR (Separa R$ e ,00) */
-        .price-container {
-          display: flex;
-          align-items: flex-start;
-        }
-        .print-text-major {
-          font-size: 10.5em !important;
-          line-height: 0.9 !important;
-        }
-        .print-text-minor {
-          font-size: 3em !important;
-          line-height: 1 !important;
-          margin-top: 15px;
-        }
-
-        #outputCondicao {
-          font-size: 1.7em !important;
-          padding: 10px 0 !important;
-        }
-
-        /* Estilo para o Código do Produto */
-        #outputCodigo {
-          font-size: 1.2em !important;
-          color: #555 !important;
-          margin-top: 10px !important;
-          text-align: right !important;
-          width: 100%;
-          padding-right: 15px;
-        }
       }
+
+      /* Utilitários estritos de cores */
+      .text-black { color: #111111 !important; }
+      .text-red { color: #e60000 !important; } /* Vermelho vivo forte */
     </style>
   </head>
-  <body class="p-0 m-0">
-    <div
-      class="w-full max-w-4xl bg-white shadow-lg overflow-hidden md:my-8 md:mx-auto"
-    >
-      <div id="controlPanel" class="p-6 border-b border-gray-200">
-        <h1 class="text-3xl font-extrabold text-black mb-6">
-          🛠️ Cartaz de Varejo
+  <body>
+    <div id="controlPanel" class="w-full max-w-5xl bg-white shadow-lg overflow-hidden md:mt-8 md:mx-auto rounded-xl border border-gray-200">
+      <div class="p-6">
+        <h1 class="text-3xl font-extrabold text-black mb-6 border-b pb-4">
+          📝 Gerador de Cartaz (Folha Amarela)
         </h1>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="input-group">
-            <label
-              for="inputCodigo"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >Cód. Produto</label
-            >
-            <input
-              id="inputCodigo"
-              type="text"
-              value=""
-              placeholder="Ex: 987654"
-              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
-            />
-          </div>
-
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div class="input-group md:col-span-2">
-            <label
-              for="inputTitulo"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >Título da Oferta</label
-            >
-            <input
-              id="inputTitulo"
-              type="text"
-              value=""
-              placeholder="Ex: PROMOÇÃO RELÂMPAGO!"
-              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
-            />
-          </div>
-
-          <div class="input-group md:col-span-3">
-            <label
-              for="inputProduto"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >Nome do Produto</label
-            >
-            <input
-              id="inputProduto"
-              type="text"
-              value=""
-              placeholder="Ex: COLCHÃO QUEEN SIZE EXCLUSIVE"
-              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
-            />
+            <label class="block text-sm font-bold text-gray-700 mb-1">Título Principal</label>
+            <input id="inputTitulo" type="text" value="MÃES" class="w-full p-3 border border-gray-400 rounded-lg focus:ring-yellow-500 uppercase" />
           </div>
 
           <div class="input-group">
-            <label
-              for="inputDe"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >Preço DE (R$)</label
-            >
-            <input
-              id="inputDe"
-              type="text"
-              value=""
-              placeholder="Ex: 1999,99"
-              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
-            />
+            <label class="block text-sm font-bold text-gray-700 mb-1">Cód. Produto</label>
+            <input id="inputCodigo" type="text" value="COD. 8343" class="w-full p-3 border border-gray-400 rounded-lg uppercase" />
           </div>
 
           <div class="input-group">
-            <label
-              for="inputPor"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >Preço POR (R$)</label
-            >
-            <input
-              id="inputPor"
-              type="text"
-              value=""
-              placeholder="Ex: 1499,00"
-              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
-            />
+            <label class="block text-sm font-bold text-gray-700 mb-1">Preço DE (R$)</label>
+            <input id="inputDe" type="text" value="4.199,00" class="w-full p-3 border border-gray-400 rounded-lg price-input" />
           </div>
 
-          <div class="input-group">
-            <label
-              for="inputCondicao"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >Condição de Pagamento</label
-            >
-            <input
-              id="inputCondicao"
-              type="text"
-              value=""
-              placeholder="Ex: Ou 6x de R$ 249,83 sem juros."
-              class="w-full p-3 border border-gray-400 rounded-lg focus:ring-red-600 focus:border-red-600"
-            />
+          <div class="input-group md:col-span-4">
+            <label class="block text-sm font-bold text-gray-700 mb-1">Nome/Descrição do Produto</label>
+            <input id="inputProduto" type="text" value="REFRIGERADOR CRM44MB INVER F. FREE 377L (BRANCO) - CONSUL" class="w-full p-3 border border-gray-400 rounded-lg uppercase" />
+          </div>
+
+          <div class="input-group md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <label class="block text-sm font-bold text-red-600 mb-1">Preço À VISTA (POR R$)</label>
+            <input id="inputPor" type="text" value="2.999,99" class="w-full p-3 border border-gray-400 rounded-lg font-bold text-lg price-input text-red-600" />
+          </div>
+
+          <div class="input-group md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div class="flex gap-2">
+              <div class="w-1/3">
+                <label class="block text-sm font-bold text-gray-700 mb-1">Condição</label>
+                <input id="inputParcTexto" type="text" value="OU 12x" class="w-full p-3 border border-gray-400 rounded-lg uppercase font-bold" />
+              </div>
+              <div class="w-2/3">
+                <label class="block text-sm font-bold text-red-600 mb-1">Valor Parcela</label>
+                <input id="inputParcValor" type="text" value="299,99" class="w-full p-3 border border-gray-400 rounded-lg font-bold text-lg price-input text-red-600" />
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group md:col-span-4">
+            <label class="block text-sm font-bold text-gray-700 mb-1">Texto Total Parcelado</label>
+            <input id="inputTotal" type="text" value="TOTAL R$ 3.479,88" class="w-full p-3 border border-gray-400 rounded-lg uppercase font-bold" />
           </div>
         </div>
 
         <div class="mt-6">
-          <button
-            onclick="imprimirPropaganda()"
-            class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out flex items-center justify-center text-lg"
-          >
-            <svg
-              class="w-6 h-6 mr-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2h-1a2 2 0 00-2-2H9a2 2 0 00-2 2H6a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h4m-4 0v-4m4 4v-4m-4-8h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              ></path>
-            </svg>
-            IMPRIMIR CARTAZ A4
+          <button onclick="window.print()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-black py-4 px-6 rounded-xl shadow border border-yellow-500 text-xl transition-all">
+            🖨️ IMPRIMIR CARTAZ
           </button>
-        </div>
-      </div>
-
-      <div id="printArea" class="bg-white">
-        <div
-          id="outputTitulo"
-          class="w-full bg-black text-white text-center font-black uppercase text-5xl md:text-8xl leading-none print-spacing-sm"
-        ></div>
-
-        <div
-          class="text-center w-full flex-grow flex flex-col items-center justify-start pt-10 pb-8"
-        >
-          <h3
-            id="outputProduto"
-            class="font-black text-black print-spacing-sm mb-4"
-          ></h3>
-
-          <div class="flex flex-col items-center justify-center my-6">
-            <p
-              id="outputDe"
-              class="font-black text-black relative inline-block mb-4"
-              style="display: none"
-            >
-              <span class="font-bold text-4xl mr-2">DE:</span>
-              <span class="text-4xl line-through"></span>
-              <span
-                class="absolute left-0 right-0 top-1/2 h-[7px] bg-black transform -translate-y-1/2"
-              ></span>
-            </p>
-
-            <div
-              class="bg-red-600 text-white p-4 sm:p-6 shadow-2xl inline-block transform rotate-2 border-8 border-red-800 transition duration-300"
-            >
-              <p class="text-4xl font-black leading-tight">POR</p>
-              <div
-                id="outputPor"
-                class="flex justify-center items-start font-black leading-none mt-2 price-container"
-              ></div>
-            </div>
-          </div>
-
-          <div class="w-full print-spacing-sm mt-8">
-            <p
-              id="outputCondicao"
-              class="font-black text-2xl text-black text-center w-full px-5 py-3 border-t-4 border-b-4 border-black"
-            ></p>
-          </div>
-
-          <p
-            id="outputCodigo"
-            class="text-sm text-gray-500 mt-auto w-full text-right pr-5 pt-3"
-          ></p>
         </div>
       </div>
     </div>
 
-    <script>
-      // Mapeamento dos elementos de entrada e saída
-      const elements = {
-        inputCodigo: document.getElementById("inputCodigo"),
-        inputTitulo: document.getElementById("inputTitulo"),
-        inputProduto: document.getElementById("inputProduto"),
-        inputDe: document.getElementById("inputDe"),
-        inputPor: document.getElementById("inputPor"),
-        inputCondicao: document.getElementById("inputCondicao"),
+    <div id="printArea" class="preview-mode p-10 flex flex-col justify-between">
+      
+      <div class="w-full flex justify-center items-center overflow-hidden mb-6" style="height: 140px;">
+        <h1 id="outTitulo" class="font-black uppercase text-black leading-none whitespace-nowrap tracking-tighter" style="font-size: 140px; letter-spacing: -0.05em;">MÃES</h1>
+      </div>
 
-        outputCodigo: document.getElementById("outputCodigo"),
-        outputTitulo: document.getElementById("outputTitulo"),
-        outputProduto: document.getElementById("outputProduto"),
-        outputDe: document.getElementById("outputDe"),
-        outputDePriceSpan: document
-          .getElementById("outputDe")
-          .querySelector(".line-through"),
-        outputPor: document.getElementById("outputPor"),
-        outputCondicao: document.getElementById("outputCondicao"),
+      <div class="w-full text-black font-bold flex flex-col mb-4 px-2">
+        <div id="outCodigo" class="text-xl mb-1 opacity-90">COD. 8343</div>
+        <div id="outProduto" class="text-2xl leading-tight uppercase w-[90%] mb-2">REFRIGERADOR CRM44MB INVER F. FREE 377L (BRANCO) - CONSUL</div>
+        <div id="outDe" class="text-3xl mt-1 font-extrabold tracking-tight">DE R$ 4.199,00</div>
+      </div>
+
+      <div class="w-full flex justify-center items-center overflow-hidden flex-1 px-4 my-2">
+        <div id="priceBox1" class="flex items-end text-red whitespace-nowrap" style="font-size: 110px;">
+          <div class="flex flex-col text-black font-black text-right leading-[0.8] mr-[0.1em] mb-[0.2em]" style="font-size: 0.35em;">
+            <span>POR</span>
+            <span>R$</span>
+          </div>
+          <div class="flex items-start font-black">
+            <span id="outPorInt" class="leading-[0.75]" style="font-size: 2.2em; letter-spacing: -0.04em;">2.999</span>
+            <span id="outPorDec" class="leading-[0.75] mt-[0.08em]" style="font-size: 0.9em; letter-spacing: -0.04em;">,99</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full flex justify-center items-center overflow-hidden flex-1 px-4 mb-4">
+        <div id="priceBox2" class="flex items-end text-red whitespace-nowrap pl-[10%]" style="font-size: 85px;">
+          <div class="flex flex-col text-black font-black text-right leading-[0.8] mr-[0.15em] mb-[0.15em]" style="font-size: 0.45em;">
+            <span id="outParcT1">OU</span>
+            <span id="outParcT2">12x</span>
+          </div>
+          <div class="flex items-start font-black">
+            <span id="outParcInt" class="leading-[0.75]" style="font-size: 2.2em; letter-spacing: -0.04em;">299</span>
+            <span id="outParcDec" class="leading-[0.75] mt-[0.08em]" style="font-size: 0.9em; letter-spacing: -0.04em;">,99</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full text-center mt-auto pb-4">
+        <span id="outTotal" class="text-black font-black text-3xl uppercase tracking-tight">TOTAL R$ 3.479,88</span>
+      </div>
+
+    </div>
+
+    <script>
+      const elements = {
+        inTitulo: document.getElementById("inputTitulo"),
+        inCodigo: document.getElementById("inputCodigo"),
+        inProduto: document.getElementById("inputProduto"),
+        inDe: document.getElementById("inputDe"),
+        inPor: document.getElementById("inputPor"),
+        inParcTexto: document.getElementById("inputParcTexto"),
+        inParcValor: document.getElementById("inputParcValor"),
+        inTotal: document.getElementById("inputTotal"),
+
+        outTitulo: document.getElementById("outTitulo"),
+        outCodigo: document.getElementById("outCodigo"),
+        outProduto: document.getElementById("outProduto"),
+        outDe: document.getElementById("outDe"),
+        
+        outPorInt: document.getElementById("outPorInt"),
+        outPorDec: document.getElementById("outPorDec"),
+        
+        outParcT1: document.getElementById("outParcT1"),
+        outParcT2: document.getElementById("outParcT2"),
+        outParcInt: document.getElementById("outParcInt"),
+        outParcDec: document.getElementById("outParcDec"),
+        
+        outTotal: document.getElementById("outTotal")
       };
 
-      /**
-       * 1. MODIFICAÇÃO: Formata e mascara o input de preço no formato X,XX
-       */
+      // MÁSCARA PARA VALORES FINANCEIROS (X.XXX,XX)
       function handlePriceInput(event) {
         let input = event.target;
-        let value = input.value.replace(/\D/g, ""); // Remove tudo que não é dígito
-
-        // Se o valor estiver vazio, não faz nada
+        let value = input.value.replace(/\D/g, ""); 
         if (!value) {
           input.value = "";
-          updateOutput(); // Atualiza a saída para refletir o campo vazio
+          updateOutput();
           return;
         }
-
-        // Converte para centavos e depois para float para formatação
         let numericValue = parseInt(value) / 100;
-
-        // Formata no padrão brasileiro (1.234,56)
         input.value = numericValue.toLocaleString("pt-BR", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         });
-
         updateOutput();
       }
 
-      /**
-       * Formata o valor principal (POR) para o display gigante.
-       * Recebe o valor já formatado do input (ex: "1.499,00").
-       */
-      function formatPricePor(formattedValue) {
-        // Remove o R$ e centavos para obter a parte inteira formatada
-        const parts = formattedValue.split(",");
-        const integerPart = parts[0];
-        const decimalPart = parts.length > 1 ? parts[1] : "00";
-
-        // Se não houver parte inteira válida, retorna vazio
-        if (!integerPart.replace(/\D/g, "")) return "";
-
-        // Retorna a string HTML com os tamanhos diferenciados
-        return `
-                <span class="text-4xl print-text-minor">R$</span>
-                <span class="text-9xl print-text-major">${integerPart}</span>
-                <span class="text-4xl print-text-minor align-top">,${decimalPart}</span>
-            `;
+      // Separação em parte Inteira e Centavos (Ex: 2.999 | ,99)
+      function splitPrice(priceStr) {
+        if (!priceStr) return { int: "0", dec: ",00" };
+        const parts = priceStr.split(",");
+        const int = parts[0];
+        const dec = parts.length > 1 ? "," + parts[1] : ",00";
+        return { int, dec };
       }
 
-      /**
-       * Formata o preço DE (padrão completo)
-       * Recebe o valor já formatado do input (ex: "1.976,00").
-       */
-      function formatPriceDe(formattedValue) {
-        // Apenas retorna o valor com o R$ na frente, já que está formatado corretamente
-        return `R$ ${formattedValue}`;
+      // MATEMÁTICA DE AUTO-SCALE (Ajusta fontes grandes se estourarem o A4)
+      function fitText(elementId, maxFontSize) {
+        const el = document.getElementById(elementId);
+        const parent = el.parentElement;
+        
+        // Retorna a fonte pro máximo pra testar o tamanho real atual
+        el.style.fontSize = maxFontSize + 'px';
+        
+        // Se já cabe na tela, para por aqui (melhora a performance)
+        if (el.scrollWidth <= parent.clientWidth) return;
+        
+        // Calcula a proporção exata de quanto ele deve diminuir e aplica
+        const ratio = parent.clientWidth / el.scrollWidth;
+        // Dá -2 pixels de margem de segurança pra não bater na borda
+        let newSize = Math.floor(maxFontSize * ratio) - 2; 
+        
+        // Aplica o tamanho novo calculado!
+        el.style.fontSize = newSize + 'px';
       }
 
-      /**
-       * Atualiza todos os elementos de saída com os valores atuais dos inputs.
-       */
       function updateOutput() {
-        const codigoValue = elements.inputCodigo.value.trim();
-        const tituloValue = elements.inputTitulo.value.trim();
-        const produtoValue = elements.inputProduto.value.trim();
-        const condicaoValue = elements.inputCondicao.value.trim();
+        // Textos Básicos
+        elements.outTitulo.textContent = elements.inTitulo.value.trim();
+        elements.outCodigo.textContent = elements.inCodigo.value.trim();
+        elements.outProduto.textContent = elements.inProduto.value.trim();
+        
+        const valDe = elements.inDe.value.trim();
+        elements.outDe.textContent = valDe ? `DE R$ ${valDe}` : "";
 
-        // Campos de Preço (já formatados via handlePriceInput)
-        const deValueFormatted = elements.inputDe.value.trim();
-        const porValueFormatted = elements.inputPor.value.trim();
+        // Preço POR À VISTA
+        const pricePor = splitPrice(elements.inPor.value.trim());
+        elements.outPorInt.textContent = pricePor.int;
+        elements.outPorDec.textContent = pricePor.dec;
 
-        // Atualiza as saídas de texto
-        elements.outputCodigo.textContent = codigoValue
-          ? `Cód.: ${codigoValue}`
-          : "";
-        elements.outputTitulo.textContent = tituloValue.toUpperCase();
-        elements.outputProduto.textContent = produtoValue;
-        elements.outputCondicao.textContent = condicaoValue;
+        // Texto do Parcelamento
+        const parcTexto = elements.inParcTexto.value.trim().split(" ");
+        elements.outParcT1.textContent = parcTexto[0] || "";
+        elements.outParcT2.textContent = parcTexto[1] || "";
 
-        // ----------------------------------------------------
-        // ATUALIZAÇÃO DO PREÇO POR
-        // ----------------------------------------------------
-        if (porValueFormatted) {
-          elements.outputPor.innerHTML = formatPricePor(porValueFormatted);
-        } else {
-          elements.outputPor.innerHTML = ""; // Limpa se estiver vazio
-        }
+        // Preço PARCELA
+        const priceParc = splitPrice(elements.inParcValor.value.trim());
+        elements.outParcInt.textContent = priceParc.int;
+        elements.outParcDec.textContent = priceParc.dec;
 
-        // ----------------------------------------------------
-        // ATUALIZAÇÃO DO PREÇO DE
-        // ----------------------------------------------------
-        if (deValueFormatted) {
-          elements.outputDe.style.display = "inline-block";
-          elements.outputDePriceSpan.textContent =
-            formatPriceDe(deValueFormatted);
-        } else {
-          elements.outputDe.style.display = "none"; // Oculta se estiver vazio
-        }
+        elements.outTotal.textContent = elements.inTotal.value.trim();
+
+        // RODA AS PROTEÇÕES CONTRA OVERFLOW!
+        // 1. Escalona o Título (Base máxima 140px)
+        fitText("outTitulo", 140);
+        // 2. Escalona o Preço POR (Base máxima 110px)
+        fitText("priceBox1", 110);
+        // 3. Escalona o Preço Parcela (Base máxima 85px)
+        fitText("priceBox2", 85);
       }
 
-      /**
-       * Aciona o diálogo de impressão do navegador.
-       */
-      function imprimirPropaganda() {
-        // Exibe a área de impressão temporariamente para a visualização
-        document.getElementById("printArea").style.display = "flex";
-
-        setTimeout(() => {
-          window.print();
-
-          // Oculta a área novamente após a impressão (ou cancelamento)
-          setTimeout(() => {
-            document.getElementById("printArea").style.display = "none";
-          }, 100);
-        }, 100);
-      }
-
-      // Inicialização e Listeners
       window.onload = function () {
-        // Adiciona listeners para os inputs de preço
-        elements.inputDe.addEventListener("input", handlePriceInput);
-        elements.inputPor.addEventListener("input", handlePriceInput);
+        // Evento nos Inputs Dinheiro
+        document.querySelectorAll(".price-input").forEach(input => {
+          input.addEventListener("input", handlePriceInput);
+        });
 
-        // Adiciona listener para os demais inputs (texto)
-        elements.inputCodigo.addEventListener("input", updateOutput);
-        elements.inputTitulo.addEventListener("input", updateOutput);
-        elements.inputProduto.addEventListener("input", updateOutput);
-        elements.inputCondicao.addEventListener("input", updateOutput);
+        // Eventos gerais pros outros campos
+        Object.values(elements).forEach(el => {
+          if(el.tagName === "INPUT") {
+            el.addEventListener("input", updateOutput);
+          }
+        });
 
-        // Inicializa a saída com campos vazios
+        // Inicializa pela primeira vez
         updateOutput();
+
+        // Se o usuário redimensionar a janela do PC, reajusta pra não estourar
+        window.addEventListener("resize", updateOutput);
       };
     </script>
   </body>
